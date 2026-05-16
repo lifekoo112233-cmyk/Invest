@@ -254,41 +254,80 @@ canvas{max-width:100%}
         <!-- 포지션 현황 + 반등 (합치기) -->
         <div id="calc-pos" class="hidden">
           <div style="font-size:13px;font-weight:500;margin-bottom:4px">📊 포지션 현황 & 반등 수익</div>
-          <div class="label" style="margin-bottom:16px">현재 보유 포지션 손익과 반등 시나리오를 함께 확인합니다</div>
+          <div class="label" style="margin-bottom:16px">현재가 입력 시 체결 포지션 수 자동 계산</div>
+
+          <!-- 핵심 입력 3개 -->
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
             <div>
-              <div class="label" style="margin-bottom:5px">1번 체결가</div>
+              <div class="label" style="margin-bottom:5px">🔵 1번 체결가 (최근 고점)</div>
               <input type="number" id="ni-pos-start" value="29000" step="50" oninput="calcPos()" class="num-input"/>
             </div>
             <div>
-              <div class="label" style="margin-bottom:5px">현재가</div>
-              <input type="number" id="ni-pos-cur" value="27500" step="50" oninput="calcPos()" style="width:100%;padding:10px 12px;background:#141929;border:0.5px solid #4a9eff;border-radius:8px;color:#4a9eff;font-size:14px;font-weight:500;outline:none"/>
+              <div class="label" style="margin-bottom:5px">🔴 현재가</div>
+              <input type="number" id="ni-pos-cur" value="27500" step="50" oninput="calcPos()" style="width:100%;padding:10px 12px;background:#141929;border:0.5px solid #ff4a4a;border-radius:8px;color:#ff4a4a;font-size:14px;font-weight:500;outline:none"/>
             </div>
           </div>
+
           <div class="slider-wrap"><div class="slider-label"><span>간격 (pt)</span><span class="slider-val" id="cv-pos-gap">50</span></div><input type="range" id="cs-pos-gap" min="5" max="500" step="5" value="50" oninput="calcPos()"/></div>
-          <div class="slider-wrap"><div class="slider-label"><span>체결 포지션 수</span><span class="slider-val" id="cv-pos-n">10</span></div><input type="range" id="cs-pos-n" min="1" max="100" step="1" value="10" oninput="calcPos()"/></div>
           <div class="slider-wrap"><div class="slider-label"><span>랏 사이즈</span><span class="slider-val" id="cv-pos-lot">1</span></div><input type="range" id="cs-pos-lot" min="0.1" max="10" step="0.1" value="1" oninput="calcPos()"/></div>
           <div class="slider-wrap"><div class="slider-label"><span>목표수익 (pt)</span><span class="slider-val" id="cv-pos-profit">300</span></div><input type="range" id="cs-pos-profit" min="50" max="2000" step="50" value="300" oninput="calcPos()"/></div>
 
-          <div style="background:#0d1225;border:0.5px solid #2a3a5a;border-radius:10px;padding:14px;margin-bottom:14px">
-            <div style="font-size:12px;color:#4a9eff;font-weight:500;margin-bottom:10px">📌 현재 포지션 상태</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
-              <div style="text-align:center"><div class="label">체결 수</div><div id="pos-count" style="font-size:20px;font-weight:700;color:#e0e6f0;margin-top:5px"></div></div>
-              <div style="text-align:center"><div class="label">평균 단가</div><div id="pos-avg" style="font-size:20px;font-weight:700;color:#4a9eff;margin-top:5px"></div></div>
-              <div style="text-align:center"><div class="label">평가 손익</div><div id="pos-unreal" style="font-size:20px;font-weight:700;margin-top:5px"></div></div>
+          <!-- 자동계산 결과: 현재 포지션 상태 -->
+          <div style="background:#0d1225;border:0.5px solid #2a3a5a;border-radius:10px;padding:14px;margin-bottom:16px">
+            <div style="font-size:12px;color:#4a9eff;font-weight:500;margin-bottom:12px">📌 현재 포지션 상태 (자동계산)</div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+              <div style="background:#141929;border-radius:8px;padding:10px;text-align:center">
+                <div class="label">체결된 포지션</div>
+                <div id="pos-count" style="font-size:24px;font-weight:700;color:#e0e6f0;margin:4px 0"></div>
+                <div class="label">개</div>
+              </div>
+              <div style="background:#141929;border-radius:8px;padding:10px;text-align:center">
+                <div class="label">평균 단가</div>
+                <div id="pos-avg" style="font-size:24px;font-weight:700;color:#4a9eff;margin:4px 0"></div>
+                <div class="label">pt</div>
+              </div>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
-              <div style="text-align:center"><div class="label">최저 진입가</div><div id="pos-worst" style="font-size:13px;font-weight:500;color:#6b7a99;margin-top:4px"></div></div>
-              <div style="text-align:center"><div class="label">손익분기점</div><div id="pos-be" style="font-size:13px;font-weight:500;color:#4a9eff;margin-top:4px"></div></div>
-              <div style="text-align:center"><div class="label">총 랏</div><div id="pos-total-lot" style="font-size:13px;font-weight:500;margin-top:4px"></div></div>
+
+            <div style="background:#141929;border-radius:8px;padding:12px;margin-bottom:10px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <span class="label">현재 평가 손익</span>
+                <span id="pos-unreal" style="font-size:18px;font-weight:700"></span>
+              </div>
+              <div style="height:6px;background:#1e2a45;border-radius:3px;overflow:hidden">
+                <div id="pos-pnl-bar" style="height:100%;border-radius:3px;transition:width 0.3s"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:10px;color:#6b7a99;margin-top:5px">
+                <span>최저 진입가: <span id="pos-worst" style="color:#ff4a4a"></span></span>
+                <span>손익분기: <span id="pos-be" style="color:#4a9eff"></span></span>
+              </div>
             </div>
-            <div style="height:6px;background:#1e2a45;border-radius:3px;overflow:hidden"><div id="pos-pnl-bar" style="height:100%;border-radius:3px;transition:width 0.3s"></div></div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11px">
+              <div style="background:#141929;border-radius:6px;padding:8px;text-align:center">
+                <div class="label">총 랏</div>
+                <div id="pos-total-lot" style="font-weight:600;margin-top:3px;color:#e0e6f0"></div>
+              </div>
+              <div style="background:#141929;border-radius:6px;padding:8px;text-align:center">
+                <div class="label">하락폭</div>
+                <div id="pos-drop-pt" style="font-weight:600;margin-top:3px;color:#ffaa4a"></div>
+              </div>
+              <div style="background:#141929;border-radius:6px;padding:8px;text-align:center">
+                <div class="label">하락률</div>
+                <div id="pos-drop-pct" style="font-weight:600;margin-top:3px;color:#ffaa4a"></div>
+              </div>
+            </div>
           </div>
 
-          <div style="font-size:12px;color:#4aff9e;font-weight:500;margin-bottom:10px">📈 반등 시나리오 (현재가 기준)</div>
+          <!-- 반등 시나리오 -->
+          <div style="font-size:12px;color:#4aff9e;font-weight:500;margin-bottom:10px">
+            📈 반등하면 어떻게 될까?
+            <span class="label" style="font-size:10px;margin-left:6px">현재 손실 기준</span>
+          </div>
           <div id="pos-scenarios"></div>
-          <div class="card" style="background:rgba(74,158,255,0.05);border:0.5px solid #2a3a5a;margin-top:4px">
-            <div class="label" style="margin-bottom:4px">💡 전체 수익실현 필요 반등</div>
+
+          <div style="padding:12px;background:rgba(74,158,255,0.05);border:0.5px solid #2a3a5a;border-radius:8px;margin-top:4px">
+            <div class="label" style="margin-bottom:4px">💡 전체 수익실현 조건</div>
             <div id="pos-full-rec" style="font-size:13px;font-weight:500;color:#4a9eff"></div>
           </div>
         </div>
@@ -649,45 +688,37 @@ function renderWithdrawals() {
 
 // ── 계산기들 ───────────────────────────────────────
 function calcLiq() {
-  const cash = parseFloat($('cs-liq-cash').value);
-  const price = parseFloat($('cs-liq-price').value);
-  const gap = parseFloat($('cs-liq-gap').value);
-  const lot1 = parseFloat($('cs-liq-lot1').value);
-  const lot2 = parseFloat($('cs-liq-lot2').value);
-  const scaleAt = parseInt($('cs-liq-scale').value);
+  const cash = parseFloat($('cs-liq-cash').value) || 120000;
+  const price = parseFloat($('ni-liq-price').value) || 29000;
+  const gap = parseFloat($('cs-liq-gap').value) || 50;
+  const lot1 = parseFloat($('cs-liq-lot1').value) || 1;
+  const lot2 = parseFloat($('cs-liq-lot2').value) || 2;
+  const scaleAt = parseInt($('cs-liq-scale').value) || 5;
 
   $('cv-liq-cash').textContent = '$'+cash.toLocaleString();
-  $('cv-liq-price').textContent = price.toLocaleString();
   $('cv-liq-gap').textContent = gap;
   $('cv-liq-lot1').textContent = lot1;
   $('cv-liq-lot2').textContent = lot2;
   $('cv-liq-scale').textContent = scaleAt+'번째부터';
 
   const rows = [];
-  let cum = 0;
   let safeN = 0, dangerN = 0;
 
   for (let n = 1; n <= 300; n++) {
     const entryPrice = price - gap * n;
-    const lot = n >= scaleAt ? lot2 : lot1;
-    // 이 포지션의 손실 = 현재가(entryPrice) 기준으로 gap만큼 더 하락 시
-    const thisLoss = gap * (n - 1) * lot; // n번째 체결 시점의 추가손실
-    cum += gap * lot; // 실제는 누적으로 계산
-    if (n === 1) cum = 0; // 첫번째는 손실없음
 
-    // 정확한 누적손실: n번째 체결 시점에서 1~n번 포지션 모두의 평가손
-    // 각 포지션i의 손실 = (entryPrice_i - entryPrice_n) * lot_i
     if (n === 1) {
-      rows.push({ n, entryPrice: Math.round(entryPrice), lot, cumLoss: 0 });
+      rows.push({ n, entryPrice: Math.round(entryPrice), lot: lot1 < scaleAt ? lot1 : lot2, cumLoss: 0 });
     } else {
       let cumLoss = 0;
       for (let i = 1; i <= n; i++) {
         const ep_i = price - gap * i;
         const ep_n = price - gap * n;
         const l_i = i >= scaleAt ? lot2 : lot1;
-        cumLoss += (ep_n - ep_i) * l_i; // 음수 = 손실
+        cumLoss += (ep_n - ep_i) * l_i;
       }
       cumLoss = Math.abs(cumLoss);
+      const lot = n >= scaleAt ? lot2 : lot1;
       rows.push({ n, entryPrice: Math.round(entryPrice), lot, cumLoss: Math.round(cumLoss) });
       if (cumLoss < cash) safeN = n;
       if (cumLoss >= cash && dangerN === 0) dangerN = n;
@@ -713,11 +744,11 @@ function calcLiq() {
   $('liq-table').innerHTML = rows.map((r, i) => {
     const prevCum = i > 0 ? rows[i-1].cumLoss : 0;
     const thisLoss = r.cumLoss - prevCum;
-    const isLiq = r.cumLoss >= cash;
+    const isLiq = r.n === dangerN;
     const isScale = r.n >= scaleAt;
     return `
-      <div class="tbl-row" style="grid-template-columns:40px 1fr 1fr 1fr 1fr;background:${isLiq?'rgba(220,53,69,0.1)':i%2===0?'transparent':'#141929'}">
-        <span style="font-size:11px;color:${isScale?'#ffaa4a':'#6b7a99'}">${r.n}${isLiq?'🚨':''}</span>
+      <div class="tbl-row" style="grid-template-columns:36px 1fr 50px 1fr 1fr;background:${isLiq?'rgba(220,53,69,0.1)':i%2===0?'transparent':'#141929'}">
+        <span style="font-size:11px;color:${isLiq?'#ff4a4a':isScale?'#ffaa4a':'#6b7a99'}">${r.n}${isLiq?'🚨':''}</span>
         <span style="font-size:11px">${fmt(r.entryPrice)}</span>
         <span style="font-size:11px;color:${isScale?'#ffaa4a':'#e0e6f0'}">${r.lot}</span>
         <span style="font-size:11px;color:#ff4a4a">-$${fmt(thisLoss)}</span>
@@ -820,103 +851,143 @@ function calcRev() {
 function calcPos() {
   const start = parseFloat($('ni-pos-start').value) || 29000;
   const cur = parseFloat($('ni-pos-cur').value) || 27500;
-  const gap = parseFloat($('cs-pos-gap').value);
-  const n = parseInt($('cs-pos-n').value);
-  const lot = parseFloat($('cs-pos-lot').value);
-  const profit = parseFloat($('cs-pos-profit').value);
+  const gap = parseFloat($('cs-pos-gap').value) || 50;
+  const lot = parseFloat($('cs-pos-lot').value) || 1;
+  const profit = parseFloat($('cs-pos-profit').value) || 300;
 
   $('cv-pos-gap').textContent = gap;
-  $('cv-pos-n').textContent = n;
   $('cv-pos-lot').textContent = lot;
   $('cv-pos-profit').textContent = profit;
 
-  const entries = Array.from({length:n}, (_,i) => start - gap*(i+1));
-  const avg = entries.reduce((s,e)=>s+e,0)/entries.length;
-  const unreal = entries.reduce((s,e)=>s+(cur-e)*lot, 0);
-  const worst = entries[entries.length-1];
-  const totalLot = n * lot;
+  // 현재가 기준 자동 체결 수 계산
+  const drop = Math.max(0, start - cur);
+  const n = Math.floor(drop / gap); // 현재가까지 내려온 체결 수
 
-  // 포지션 요약
-  $('pos-count').textContent = n+'개';
+  if (n === 0) {
+    $('pos-count').textContent = '0';
+    $('pos-avg').textContent = '-';
+    $('pos-unreal').textContent = '체결 없음';
+    $('pos-unreal').style.color = '#6b7a99';
+    $('pos-scenarios').innerHTML = '<div class="label" style="text-align:center;padding:20px">현재가가 1번 체결가보다 낮아야 포지션이 생깁니다</div>';
+    return;
+  }
+
+  // 진입가 목록: 1번 = start - gap, 2번 = start - gap*2 ...
+  const entries = Array.from({length: n}, (_, i) => start - gap * (i + 1));
+  const avg = entries.reduce((s, e) => s + e, 0) / entries.length;
+  const unreal = entries.reduce((s, e) => s + (cur - e) * lot, 0); // 음수 = 손실
+  const worst = entries[entries.length - 1]; // 가장 낮은 진입가
+  const totalLot = Math.round(n * lot * 10) / 10;
+
+  // 현재 상태 표시
+  $('pos-count').textContent = n;
   $('pos-avg').textContent = fmt(avg);
   $('pos-unreal').textContent = fmtD(unreal);
   $('pos-unreal').style.color = unreal >= 0 ? '#4aff9e' : '#ff4a4a';
   $('pos-worst').textContent = fmt(worst);
   $('pos-be').textContent = fmt(avg);
-  $('pos-total-lot').textContent = totalLot+'lot';
+  $('pos-total-lot').textContent = totalLot + ' lot';
+  $('pos-drop-pt').textContent = fmt(drop) + 'pt';
+  $('pos-drop-pct').textContent = '-' + ((drop / start) * 100).toFixed(1) + '%';
 
-  // 손익 진행바
-  const maxLoss = entries.reduce((s,e)=>s+(worst-e)*lot, 0);
-  const pnlPct = maxLoss !== 0 ? Math.max(2, Math.min(98, ((unreal - maxLoss) / Math.abs(maxLoss)) * 50 + 50)) : 50;
-  $('pos-pnl-bar').style.width = pnlPct+'%';
+  // 손익 진행바 (0=최대손실, 100=손익분기)
+  const maxLoss = Math.abs(entries.reduce((s, e) => s + (worst - e) * lot, 0));
+  const pnlPct = maxLoss > 0 ? Math.max(2, Math.min(98, (1 - Math.abs(unreal) / maxLoss) * 100)) : 50;
+  $('pos-pnl-bar').style.width = (unreal >= 0 ? 100 : pnlPct) + '%';
   $('pos-pnl-bar').style.background = unreal >= 0 ? '#4aff9e' : '#ff4a4a';
 
-  // 반등 시나리오 (현재가 기준으로 반등)
-  const scenarios = [
-    { label: '+'+profit+'pt (목표수익)', recPrice: cur + profit },
-    { label: '25% 반등', recPrice: cur + (start - cur) * 0.25 },
-    { label: '50% 반등', recPrice: cur + (start - cur) * 0.5 },
-    { label: '75% 반등', recPrice: cur + (start - cur) * 0.75 },
-    { label: '100% 회복', recPrice: start },
-    { label: '손익분기 도달', recPrice: avg },
-  ].filter(s => s.recPrice > cur);
+  // ── 반등 시나리오 ──────────────────────────────────
+  // 시나리오: 현재가에서 X pt 오르면 어떻게 되나?
+  // 각 포지션은 진입가 + profit pt 도달 시 수익실현
 
-  // 중복 제거 및 정렬
+  const makeScenario = (targetPrice, label) => {
+    if (targetPrice <= cur) return null;
+    const risePt = Math.round(targetPrice - cur);
+
+    // 수익실현된 포지션: targetPrice >= 진입가 + profit
+    const closed = entries.filter(e => targetPrice >= e + profit);
+    // 아직 보유중인 포지션
+    const held = entries.filter(e => targetPrice < e + profit);
+
+    const realizedProfit = closed.length * profit * lot;          // 확정 수익
+    const heldEval = held.reduce((s, e) => s + (targetPrice - e) * lot, 0); // 평가손익
+    const totalPnL = realizedProfit + heldEval;                   // 합산
+
+    // 현재 손실 대비 개선액
+    const improvement = totalPnL - unreal;
+
+    return { label, targetPrice, risePt, closed, held, realizedProfit, heldEval, totalPnL, improvement };
+  };
+
+  // 의미있는 반등 포인트들
+  const scenarioTargets = [
+    { pt: profit, label: `+${profit}pt (목표수익 1개 도달)` },
+    { pt: Math.round(drop * 0.25), label: `하락폭의 25% 반등` },
+    { pt: Math.round(drop * 0.5), label: `하락폭의 50% 반등` },
+    { pt: Math.round(drop * 0.75), label: `하락폭의 75% 반등` },
+    { pt: Math.round(avg - cur), label: `평균단가 도달 (손익분기)` },
+    { pt: drop, label: `원점 회복 (${fmt(start)})` },
+  ].filter(t => t.pt > 0);
+
+  // 중복 제거 + 정렬
   const seen = new Set();
-  const uniqueScenarios = scenarios.filter(s => {
-    const key = Math.round(s.recPrice);
-    if (seen.has(key)) return false;
-    seen.add(key);
+  const uniqueTargets = scenarioTargets.filter(t => {
+    const k = t.pt;
+    if (seen.has(k)) return false;
+    seen.add(k);
     return true;
-  }).sort((a,b) => a.recPrice - b.recPrice);
+  }).sort((a, b) => a.pt - b.pt);
 
-  $('pos-scenarios').innerHTML = uniqueScenarios.map(s => {
-    const soldEntries = entries.filter(e => s.recPrice >= e + profit);
-    const unsoldEntries = entries.filter(e => s.recPrice < e + profit);
-    const realized = soldEntries.length * profit * lot;
-    const unrealScen = unsoldEntries.reduce((sum, e) => sum + (s.recPrice - e) * lot, 0);
-    const net = realized + unrealScen + unreal - (unreal); // 현재 평가손 기준
-    const netFromNow = realized + unsoldEntries.reduce((sum,e)=>sum+(s.recPrice-e)*lot,0) - entries.reduce((sum,e)=>sum+(cur-e)*lot,0);
-    const bc = netFromNow >= 0 ? '#1D9E75' : '#ffaa4a';
-    const netColor = netFromNow >= 0 ? '#4aff9e' : '#ff4a4a';
-    const risingPt = Math.round(s.recPrice - cur);
+  $('pos-scenarios').innerHTML = uniqueTargets.map(t => {
+    const s = makeScenario(cur + t.pt, t.label);
+    if (!s) return '';
+    const isProfit = s.totalPnL >= 0;
+    const borderColor = isProfit ? '#1D9E75' : '#2a3a5a';
+    const pnlColor = isProfit ? '#4aff9e' : '#ff4a4a';
+
     return `
-      <div style="background:#141929;border-left:3px solid ${bc};border-radius:8px;padding:12px;margin-bottom:8px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="background:#141929;border-left:3px solid ${borderColor};border-radius:8px;margin-bottom:8px;overflow:hidden">
+        <!-- 헤더 -->
+        <div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center">
           <div>
-            <div style="font-size:11px;color:#6b7a99">${s.label}</div>
-            <div style="font-size:13px;font-weight:500">${fmt(s.recPrice)} <span style="font-size:11px;color:#4a9eff">(+${fmt(risingPt)}pt)</span></div>
+            <div style="font-size:10px;color:#6b7a99;margin-bottom:2px">${s.label}</div>
+            <div style="font-size:14px;font-weight:600">
+              ${fmt(s.targetPrice)}
+              <span style="font-size:11px;color:#4a9eff;font-weight:400"> (+${fmt(s.risePt)}pt)</span>
+            </div>
           </div>
           <div style="text-align:right">
-            <div style="font-size:11px;color:#6b7a99">추가 손익</div>
-            <div style="font-size:16px;font-weight:700;color:${netColor}">${fmtD(netFromNow)}</div>
+            <div style="font-size:10px;color:#6b7a99">평가 합산</div>
+            <div style="font-size:18px;font-weight:700;color:${pnlColor}">${fmtD(s.totalPnL)}</div>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;font-size:11px">
-          <div style="background:#0d1225;border-radius:4px;padding:5px;text-align:center">
-            <div style="color:#6b7a99">수익실현</div>
-            <div style="color:#4aff9e;font-weight:500">${soldEntries.length}개</div>
-            <div style="color:#4aff9e">+$${fmt(realized)}</div>
+        <!-- 상세 3칸 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-top:0.5px solid #1e2a45">
+          <div style="padding:8px;text-align:center;border-right:0.5px solid #1e2a45">
+            <div style="font-size:10px;color:#6b7a99;margin-bottom:3px">✅ 수익실현</div>
+            <div style="font-size:13px;font-weight:600;color:#4aff9e">${s.closed.length}개</div>
+            <div style="font-size:11px;color:#4aff9e">+$${fmt(s.realizedProfit)}</div>
           </div>
-          <div style="background:#0d1225;border-radius:4px;padding:5px;text-align:center">
-            <div style="color:#6b7a99">미실현</div>
-            <div style="color:${unrealScen>=0?'#4aff9e':'#ff4a4a'};font-weight:500">${fmtD(unrealScen)}</div>
-            <div style="color:#6b7a99">${unsoldEntries.length}개</div>
+          <div style="padding:8px;text-align:center;border-right:0.5px solid #1e2a45">
+            <div style="font-size:10px;color:#6b7a99;margin-bottom:3px">📌 보유중</div>
+            <div style="font-size:13px;font-weight:600;color:#e0e6f0">${s.held.length}개</div>
+            <div style="font-size:11px;color:${s.heldEval>=0?'#4aff9e':'#ff4a4a'}">${fmtD(s.heldEval)}</div>
           </div>
-          <div style="background:#0d1225;border-radius:4px;padding:5px;text-align:center">
-            <div style="color:#6b7a99">현재 평가</div>
-            <div style="color:${unreal>=0?'#4aff9e':'#ff4a4a'};font-weight:500">${fmtD(unreal)}</div>
-            <div style="color:#6b7a99">출발점</div>
+          <div style="padding:8px;text-align:center">
+            <div style="font-size:10px;color:#6b7a99;margin-bottom:3px">📊 현재대비</div>
+            <div style="font-size:13px;font-weight:600;color:${s.improvement>=0?'#4aff9e':'#ffaa4a'}">${fmtD(s.improvement)}</div>
+            <div style="font-size:11px;color:#6b7a99">손익 개선</div>
           </div>
         </div>
       </div>
     `;
   }).join('');
 
-  // 전체 청산 필요 반등
-  const needPt = entries.length > 0 ? (start - worst) + profit : profit;
-  const fullPrice = cur + needPt;
-  $('pos-full-rec').textContent = `현재가에서 +${fmt(needPt)}pt → ${fmt(fullPrice)} 도달 시 모든 포지션 수익실현`;
+  // 전체 청산 조건
+  const needRise = (start - worst) + profit; // 최저 포지션이 +profit 되려면
+  const fullPrice = cur + needRise;
+  $('pos-full-rec').textContent =
+    `현재가(${fmt(cur)})에서 +${fmt(needRise)}pt 상승 → ${fmt(fullPrice)} 도달 시 모든 ${n}개 포지션 수익실현 완료`;
 }
 
 // ── 초기 실행 ──────────────────────────────────────
