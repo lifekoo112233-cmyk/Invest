@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="40" fill="#0a0e1a"/>
+  <rect x="16" y="16" width="160" height="160" rx="28" fill="#141929"/>
+  <polyline points="24,140 60,100 90,115 130,60 168,40" fill="none" stroke="#4aff9e" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="24" y1="160" x2="168" y2="160" stroke="#1e2a45" stroke-width="2"/>
+  <text x="96" y="185" font-family="Arial" font-size="14" fill="#4a9eff" text-anchor="middle">GRID</text>
+</svg>

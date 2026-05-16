@@ -1,0 +1,14 @@
+{
+  "short_name": "Grid Trader",
+  "name": "Grid Trader - 백테스트 & 계산기",
+  "icons": [
+    {"src": "logo192.svg", "type": "image/svg+xml", "sizes": "192x192", "purpose": "any maskable"},
+    {"src": "logo512.svg", "type": "image/svg+xml", "sizes": "512x512", "purpose": "any maskable"}
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0a0e1a",
+  "background_color": "#0a0e1a",
+  "lang": "ko"
+}
