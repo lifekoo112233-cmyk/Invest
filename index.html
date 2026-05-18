@@ -335,16 +335,15 @@ const fmtF = (n,d) => Number((n||0).toFixed(d||2));
 const fmtD = n  => (n>=0?'+$':'-$') + fmt(Math.abs(n));
 
 // ─── 종목 정의 ────────────────────────────────────────────────
-// pipVal: 1랏 × 1단위 달러
-// unit: 화면 표시 단위명
-// defPrice: 기본 가격 (해당 unit 기준 숫자)
+// pipVal: 실제 가격 1.00 움직임당 달러/랏
+// pipScale: 입력 간격 → 실제 가격 변동 배율
 const ASSETS = {
   NAS100: { name:'나스닥 100', pipVal:1.00,  unit:'pt',      pipScale:1,    defGap:50,  defPrice:20000,  defProfit:300 },
   XAUUSD: { name:'골드',       pipVal:100.00,unit:'pt',      pipScale:1,    defGap:5,   defPrice:4450,   defProfit:30  },
-  USDJPY: { name:'USD/JPY',    pipVal:0.67,  unit:'0.01pip', pipScale:0.01, defGap:50,  defPrice:155.00, defProfit:200 },
-  GBPJPY: { name:'GBP/JPY',    pipVal:0.67,  unit:'0.01pip', pipScale:0.01, defGap:50,  defPrice:195.00, defProfit:200 },
+  USDJPY: { name:'USD/JPY',    pipVal:67.00, unit:'0.01pip', pipScale:0.01, defGap:50,  defPrice:155.00, defProfit:200 },
+  GBPJPY: { name:'GBP/JPY',    pipVal:67.00, unit:'0.01pip', pipScale:0.01, defGap:50,  defPrice:195.00, defProfit:200 },
 };
-// pipScale: 입력 간격을 실제 가격 변동으로 변환 (USDJPY 50 입력 → 0.50 변동)
+// USDJPY: 간격 50 입력 → 실제 0.50 움직임 → 0.50 × $67 × 랏 = 손익
 
 let CUR = 'NAS100';   // 현재 종목 키
 let PV  = 1.00;       // 현재 pip 달러값 (수정 가능)
@@ -362,9 +361,11 @@ function selectAsset(key) {
   $('asset-label').textContent = a.name;
 
   // 설정 패널
-  $('sp-name').textContent    = a.name;
-  $('sp-unit').textContent    = `1단위 = ${a.unit}`;
-  $('ni-pip-val').value       = a.pipVal;
+  $('sp-name').textContent = a.name;
+  $('sp-unit').textContent = `1단위 = ${a.unit}`;
+  // 외환은 내부 pipVal이 1.00당 기준이므로, 표시는 0.01pip당으로 변환
+  const displayPV = a.pipScale === 0.01 ? +(a.pipVal * 0.01).toFixed(4) : a.pipVal;
+  $('ni-pip-val').value = displayPV;
 
   // 단위 뱃지
   ['liq-pu','liq-gu','rev-pu','rev-gu','pos-pu','pos-gu','pos-pru'].forEach(id => {
@@ -389,8 +390,10 @@ function selectAsset(key) {
 function updatePipVal() {
   const v = parseFloat($('ni-pip-val').value);
   if (!v || v <= 0) return;
-  PV = v;
-  ASSETS[CUR].pipVal = v;
+  const ps = ASSETS[CUR].pipScale;
+  // 외환: 사용자가 0.01pip당 값 입력 → 내부는 1.00당으로 변환
+  PV = ps === 0.01 ? v / ps : v;
+  ASSETS[CUR].pipVal = PV;
   calcLiq(); calcRev(); calcPos();
 }
 
@@ -687,14 +690,7 @@ function generateIcon() {
   [[296,250],[352,194],[408,138]].forEach(([x,y])=>{ctx.beginPath();ctx.arc(x,y,10,0,Math.PI*2);ctx.fillStyle='#4aff9e';ctx.fill();});
   ctx.fillStyle='#6b7a99'; ctx.font='32px Arial,sans-serif'; ctx.fillText('청산·역산·포지션',S/2,472);
   const url=canvas.toDataURL('image/png');
-  $('pwa-icon-link').href=url;
-  if(!$('icon-dl-btn')){
-    const a=document.createElement('a');
-    a.id='icon-dl-btn'; a.href=url; a.download='grid-trader-icon.png';
-    a.style.cssText='display:flex;align-items:center;justify-content:center;padding:10px;background:#141929;border:0.5px solid #2a3a5a;border-radius:8px;color:#4a9eff;font-size:13px;text-decoration:none;margin-bottom:14px';
-    a.textContent='📲 홈화면 아이콘 저장 (512×512 PNG)';
-    $('content').insertBefore(a,$('content').firstChild);
-  }
+  $('pwa-icon-link').href = url;
 }
 
 // ─── 초기화 ──────────────────────────────────────────────────
