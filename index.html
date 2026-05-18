@@ -163,6 +163,24 @@ input[type=number]{-moz-appearance:textfield}
       </div>
     </div>
 
+    <!-- 수동 포지션 추가 (청산) -->
+    <div style="background:#0d1225;border:0.5px solid #2a3a5a;border-radius:10px;padding:12px;margin-bottom:12px">
+      <div style="font-size:11px;color:#4a9eff;font-weight:500;margin-bottom:6px">➕ 기존 보유 포지션 추가</div>
+      <div style="font-size:10px;color:#6b7a99;margin-bottom:10px">불규칙 진입가·랏 추가 시 청산 번째 재계산</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end">
+        <div>
+          <div class="fl">진입가</div>
+          <input type="number" class="ni" id="liq-manual-price" step="0.01" placeholder="0" style="padding:9px 10px;font-size:14px"/>
+        </div>
+        <div>
+          <div class="fl">랏</div>
+          <input type="number" class="ni" id="liq-manual-lot" step="0.01" min="0.01" placeholder="0" style="padding:9px 10px;font-size:14px"/>
+        </div>
+        <button onclick="addLiqManualPos()" style="padding:9px 14px;background:#4a9eff;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;white-space:nowrap">추가</button>
+      </div>
+      <div id="liq-manual-list" style="margin-top:8px"></div>
+    </div>
+
     <div class="bar-wrap">
       <div class="bar-label"><span>자금 소진율</span><span id="liq-pct-txt">0%</span></div>
       <div class="bar-bg"><div class="bar-fill" id="liq-bar" style="width:0%"></div></div>
@@ -317,8 +335,6 @@ input[type=number]{-moz-appearance:textfield}
       </div>
     </div>
 
-    <div style="font-size:12px;color:#4aff9e;font-weight:500;margin-bottom:10px">📈 반등 시나리오</div>
-
     <!-- 수동 포지션 추가 -->
     <div style="background:#0d1225;border:0.5px solid #2a3a5a;border-radius:10px;padding:12px;margin-bottom:12px">
       <div style="font-size:11px;color:#4a9eff;font-weight:500;margin-bottom:10px">➕ 수동 포지션 추가</div>
@@ -333,9 +349,10 @@ input[type=number]{-moz-appearance:textfield}
         </div>
         <button onclick="addManualPos()" style="padding:9px 14px;background:#4a9eff;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;white-space:nowrap">추가</button>
       </div>
-      <!-- 수동 추가 목록 -->
       <div id="manual-list" style="margin-top:10px"></div>
     </div>
+
+    <div style="font-size:12px;color:#4aff9e;font-weight:500;margin-bottom:10px">📈 반등 시나리오</div>
     <div id="pos-scenarios"></div>
     <div style="padding:12px;background:rgba(74,158,255,0.05);border:0.5px solid #2a3a5a;border-radius:8px;margin-top:4px;margin-bottom:20px">
       <div style="font-size:11px;color:#6b7a99;margin-bottom:4px">💡 전체 수익실현 조건</div>
@@ -362,7 +379,40 @@ const ASSETS = {
 
 let CUR = 'NAS100';   // 현재 종목 키
 let PV  = 1.00;       // 현재 pip 달러값 (수정 가능)
-let manualPos = [];   // 수동 추가 포지션 [{price, lot}]
+let manualPos    = [];   // 포지션탭 수동 추가
+let liqManualPos = [];   // 청산탭 수동 추가
+
+// ─── 청산 수동 포지션 추가/삭제 ──────────────────────────────
+function addLiqManualPos() {
+  const price = parseFloat($('liq-manual-price').value);
+  const lot   = parseFloat($('liq-manual-lot').value);
+  if (!price || !lot || lot <= 0) return;
+  liqManualPos.push({ price, lot });
+  $('liq-manual-price').value = '';
+  $('liq-manual-lot').value   = '';
+  renderLiqManualList();
+  calcLiq();
+}
+
+function removeLiqManualPos(idx) {
+  liqManualPos.splice(idx, 1);
+  renderLiqManualList();
+  calcLiq();
+}
+
+function renderLiqManualList() {
+  if (liqManualPos.length === 0) { $('liq-manual-list').innerHTML = ''; return; }
+  $('liq-manual-list').innerHTML = `
+    <div style="border-top:0.5px solid #1e2a45;padding-top:8px">
+      ${liqManualPos.map((p,i) => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid #1e2a45">
+          <span style="font-size:12px">진입가 <span style="color:#4a9eff;font-weight:600">${p.price}</span></span>
+          <span style="font-size:12px">랏 <span style="color:#ffaa4a;font-weight:600">${p.lot}</span></span>
+          <button onclick="removeLiqManualPos(${i})" style="padding:3px 8px;background:rgba(255,74,74,0.15);border:0.5px solid #ff4a4a;border-radius:5px;color:#ff4a4a;font-size:11px">삭제</button>
+        </div>
+      `).join('')}
+    </div>`;
+}
 
 // ─── 수동 포지션 추가/삭제 ────────────────────────────────────
 function addManualPos() {
@@ -406,8 +456,10 @@ function selectAsset(key) {
   PV = a.pipVal;
 
   // 종목 바뀌면 수동 포지션 초기화
-  manualPos = [];
+  manualPos    = [];
+  liqManualPos = [];
   renderManualList();
+  renderLiqManualList();
 
   // 탭 active
   Object.keys(ASSETS).forEach(k => $('at-'+k).classList.toggle('active', k===key));
@@ -500,10 +552,21 @@ function calcLiq() {
   const rows = [];
   let safeN = 0, dangerN = 0;
 
+  // 수동 포지션의 현재가(n번째 진입가) 기준 추가 손실 계산 함수
+  const manualLossAt = (priceAtN) => {
+    return liqManualPos.reduce((s, mp) => {
+      if (mp.price <= priceAtN) return s; // 아직 미체결
+      const diff  = (priceAtN - mp.price) / ps; // 단위수 (음수=손실)
+      return s + Math.abs(diff * mp.lot * PV);
+    }, 0);
+  };
+
   for (let n = 1; n <= 500; n++) {
-    const ep      = +(price - gapReal * n).toFixed(4);
-    const cumLoss = calcCumLoss(n, price, gapReal, lot1, lot2, scaleAt);
-    const lot     = n >= scaleAt ? lot2 : lot1;
+    const ep       = +(price - gapReal * n).toFixed(4);
+    const autoLoss = calcCumLoss(n, price, gapReal, lot1, lot2, scaleAt);
+    const addLoss  = manualLossAt(price - gapReal * n);
+    const cumLoss  = autoLoss + addLoss;
+    const lot      = n >= scaleAt ? lot2 : lot1;
     rows.push({ n, ep, lot: +lot.toFixed(2), cumLoss: Math.round(cumLoss) });
 
     if (n > 1) {
