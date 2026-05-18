@@ -339,11 +339,12 @@ const fmtD = n  => (n>=0?'+$':'-$') + fmt(Math.abs(n));
 // unit: 화면 표시 단위명
 // defPrice: 기본 가격 (해당 unit 기준 숫자)
 const ASSETS = {
-  NAS100: { name:'나스닥 100', pipVal:1.00,  unit:'pt',      defGap:50,  defPrice:20000, defProfit:300  },
-  XAUUSD: { name:'골드',       pipVal:100.00,unit:'pt',      defGap:5,   defPrice:4450,  defProfit:30   },
-  USDJPY: { name:'USD/JPY',    pipVal:6.70,  unit:'0.01pip', defGap:50,  defPrice:155.00,defProfit:200  },
-  GBPJPY: { name:'GBP/JPY',    pipVal:6.70,  unit:'0.01pip', defGap:50,  defPrice:195.00,defProfit:200  },
+  NAS100: { name:'나스닥 100', pipVal:1.00,  unit:'pt',      pipScale:1,    defGap:50,  defPrice:20000,  defProfit:300 },
+  XAUUSD: { name:'골드',       pipVal:100.00,unit:'pt',      pipScale:1,    defGap:5,   defPrice:4450,   defProfit:30  },
+  USDJPY: { name:'USD/JPY',    pipVal:6.70,  unit:'0.01pip', pipScale:0.01, defGap:50,  defPrice:155.00, defProfit:200 },
+  GBPJPY: { name:'GBP/JPY',    pipVal:6.70,  unit:'0.01pip', pipScale:0.01, defGap:50,  defPrice:195.00, defProfit:200 },
 };
+// pipScale: 입력 간격을 실제 가격 변동으로 변환 (USDJPY 50 입력 → 0.50 변동)
 
 let CUR = 'NAS100';   // 현재 종목 키
 let PV  = 1.00;       // 현재 pip 달러값 (수정 가능)
@@ -402,16 +403,15 @@ function switchMain(tab) {
 }
 
 // ─── 공통: 누적손실 계산 ──────────────────────────────────────
-// n번째 주문 체결 시 (1~n 모두 보유 중), 현재가가 n번째 진입가일 때 평가손
-// entryBase: 첫 진입 기준가, gap, lot1, lot2, scaleAt
-function calcCumLoss(n, entryBase, gap, lot1, lot2, scaleAt) {
+// gapReal: 실제 가격 변동 단위 (gap × pipScale)
+function calcCumLoss(n, entryBase, gapReal, lot1, lot2, scaleAt) {
   if (n < 2) return 0;
   let loss = 0;
-  const priceAtN = entryBase - gap * n;
+  const priceAtN = entryBase - gapReal * n;
   for (let i = 1; i <= n; i++) {
-    const ep_i = entryBase - gap * i;
+    const ep_i = entryBase - gapReal * i;
     const l_i  = i >= scaleAt ? lot2 : lot1;
-    loss += (priceAtN - ep_i) * l_i * PV; // 음수 (손실)
+    loss += (priceAtN - ep_i) * l_i * PV;
   }
   return Math.abs(loss);
 }
@@ -428,14 +428,17 @@ function calcLiq() {
 
   if (!cash || !price || !gap) return;
 
+  const ps      = ASSETS[CUR].pipScale;
+  const gapReal = +(gap * ps).toFixed(10); // 실제 가격 변동
+
   const rows = [];
   let safeN = 0, dangerN = 0;
 
   for (let n = 1; n <= 500; n++) {
-    const ep      = price - gap * n;
-    const cumLoss = calcCumLoss(n, price, gap, lot1, lot2, scaleAt);
+    const ep      = +(price - gapReal * n).toFixed(4);
+    const cumLoss = calcCumLoss(n, price, gapReal, lot1, lot2, scaleAt);
     const lot     = n >= scaleAt ? lot2 : lot1;
-    rows.push({ n, ep: +ep.toFixed(4), lot: +lot.toFixed(2), cumLoss: Math.round(cumLoss) });
+    rows.push({ n, ep, lot: +lot.toFixed(2), cumLoss: Math.round(cumLoss) });
 
     if (n > 1) {
       if (cumLoss < cash)  safeN   = n;
@@ -447,7 +450,8 @@ function calcLiq() {
   const safeRow    = rows.find(r => r.n === safeN);
   const dangerRow  = rows.find(r => r.n === dangerN) || rows[rows.length-1];
   const survivePts = dangerN ? gap*(dangerN-1) : gap*rows.length;
-  const survivePct = price ? ((survivePts/price)*100).toFixed(1) : '0';
+  const surviveReal= dangerN ? gapReal*(dangerN-1) : gapReal*rows.length;
+  const survivePct = price ? ((surviveReal/price)*100).toFixed(1) : '0';
   const usedPct    = Math.min((dangerRow.cumLoss/cash)*100, 100);
 
   $('r-safe-n').textContent    = safeN  ? safeN+'번째'   : '-';
@@ -492,24 +496,27 @@ function calcRev() {
 
   if (!curP || !gap) return;
 
+  const ps      = ASSETS[CUR].pipScale;
+  const gapReal = +(gap * ps).toFixed(10);
+
   const drop    = Math.max(0, curP - tgt);
   const dropPct = curP ? ((drop/curP)*100).toFixed(2) : '0';
-  const orderN  = drop > 0 ? Math.ceil(drop/gap) : 0;
+  const orderN  = drop > 0 ? Math.ceil(drop/gapReal) : 0;
 
-  $('rev-drop-val').textContent  = drop.toFixed(2)+' '+a.unit;
-  $('rev-drop-pct').textContent  = '-'+dropPct+'%';
-  $('rev-order-n').textContent   = orderN ? orderN+'번째' : '-';
-  $('rev-order-price').textContent = orderN ? '진입가 '+(curP-gap*orderN).toFixed(4) : '';
+  $('rev-drop-val').textContent    = drop.toFixed(2)+' '+a.unit;
+  $('rev-drop-pct').textContent    = '-'+dropPct+'%';
+  $('rev-order-n').textContent     = orderN ? orderN+'번째' : '-';
+  $('rev-order-price').textContent = orderN ? '진입가 '+(curP-gapReal*orderN).toFixed(4) : '';
 
   const rows = [];
   for (let n = 1; n <= orderN; n++) {
-    const cumLoss = calcCumLoss(n, curP, gap, lot1, lot2, scaleAt);
+    const cumLoss = calcCumLoss(n, curP, gapReal, lot1, lot2, scaleAt);
     const prev    = rows.length > 0 ? rows[rows.length-1].cumLoss : 0;
     rows.push({
       n,
-      ep:   +(curP - gap*n).toFixed(4),
-      lot:  +(n >= scaleAt ? lot2 : lot1).toFixed(2),
-      cumLoss: Math.round(cumLoss),
+      ep:       +(curP - gapReal*n).toFixed(4),
+      lot:      +(n >= scaleAt ? lot2 : lot1).toFixed(2),
+      cumLoss:  Math.round(cumLoss),
       thisLoss: Math.round(cumLoss - prev)
     });
   }
@@ -559,8 +566,12 @@ function calcPos() {
   const profit = parseFloat($('pos-profit').value) || 1;
   const a      = ASSETS[CUR];
 
+  const ps         = ASSETS[CUR].pipScale;
+  const gapReal    = +(gap * ps).toFixed(10);
+  const profitReal = +(profit * ps).toFixed(10);
+
   const drop = Math.max(0, start - curP);
-  const n    = gap > 0 ? Math.floor(drop/gap) : 0;
+  const n    = gapReal > 0 ? Math.floor(drop / gapReal) : 0;
 
   if (n === 0) {
     $('pos-count').textContent   = '0';
@@ -572,21 +583,20 @@ function calcPos() {
     return;
   }
 
-  // 진입가 배열: 1번=start-gap, 2번=start-gap*2 ...
-  const entries = Array.from({length:n}, (_,i) => +(start - gap*(i+1)).toFixed(4));
+  const entries = Array.from({length:n}, (_,i) => +(start - gapReal*(i+1)).toFixed(5));
   const avg     = entries.reduce((s,e)=>s+e,0) / n;
   const unreal  = entries.reduce((s,e)=>s+(curP-e)*lot*PV, 0);
   const worst   = entries[n-1];
 
   $('pos-count').textContent     = n;
-  $('pos-avg').textContent       = avg.toFixed(2);
+  $('pos-avg').textContent       = avg.toFixed(3);
   $('pos-avg-unit').textContent  = a.unit;
   $('pos-unreal').textContent    = fmtD(unreal);
   $('pos-unreal').style.color    = unreal>=0 ? '#4aff9e' : '#ff4a4a';
-  $('pos-worst').textContent     = worst.toFixed(2);
-  $('pos-be').textContent        = avg.toFixed(2);
+  $('pos-worst').textContent     = worst.toFixed(3);
+  $('pos-be').textContent        = avg.toFixed(3);
   $('pos-total-lot').textContent = fmtF(n*lot,2)+' lot';
-  $('pos-drop-pt').textContent   = drop.toFixed(2)+' '+a.unit;
+  $('pos-drop-pt').textContent   = drop.toFixed(3)+' '+a.unit;
   $('pos-drop-pct').textContent  = start ? '-'+((drop/start)*100).toFixed(2)+'%' : '';
 
   const maxLoss = entries.reduce((s,e)=>s+Math.abs((worst-e)*lot*PV), 0);
@@ -594,12 +604,11 @@ function calcPos() {
   $('pos-pnl-bar').style.width      = (unreal>=0?100:pnlPct)+'%';
   $('pos-pnl-bar').style.background = unreal>=0 ? '#4aff9e' : '#ff4a4a';
 
-  // 반등 시나리오
   const makeS = (tp, label) => {
     if (tp <= curP) return null;
-    const closed = entries.filter(e => tp >= e+profit);
-    const held   = entries.filter(e => tp < e+profit);
-    const realP  = closed.length * profit * lot * PV;
+    const closed = entries.filter(e => tp >= e + profitReal);
+    const held   = entries.filter(e => tp <  e + profitReal);
+    const realP  = closed.length * profitReal * lot * PV;
     const heldE  = held.reduce((s,e)=>s+(tp-e)*lot*PV, 0);
     const total  = realP + heldE;
     return { label, tp, rise:tp-curP, closed, held, realP, heldE, total, improve:total-unreal };
@@ -607,13 +616,13 @@ function calcPos() {
 
   const avgRise = avg - curP;
   const pts = [
-    { pt:profit,               label:`+${profit}${a.unit} (목표수익 1개)` },
-    { pt:Math.round(drop*0.25),label:'하락폭 25% 반등' },
-    { pt:Math.round(drop*0.5), label:'하락폭 50% 반등' },
-    { pt:Math.round(drop*0.75),label:'하락폭 75% 반등' },
-    { pt:Math.round(avgRise),  label:'평균단가 도달 (손익분기)' },
-    { pt:Math.round(drop),     label:`원점 회복 (${start})` },
-  ].filter(t => t.pt > 0);
+    { pt: profitReal,    label:`+${profit}${a.unit} (목표수익 1개)` },
+    { pt: drop*0.25,     label:'하락폭 25% 반등' },
+    { pt: drop*0.5,      label:'하락폭 50% 반등' },
+    { pt: drop*0.75,     label:'하락폭 75% 반등' },
+    { pt: avgRise,       label:'평균단가 도달 (손익분기)' },
+    { pt: drop,          label:`원점 회복 (${start})` },
+  ].filter(t => t.pt > 0.000001);
 
   const seen=new Set();
   const uniq=pts.filter(t=>{if(seen.has(t.pt))return false;seen.add(t.pt);return true;}).sort((a,b)=>a.pt-b.pt);
@@ -654,8 +663,8 @@ function calcPos() {
     </div>`;
   }).join('');
 
-  const needRise  = (start-worst) + profit;
-  $('pos-full-rec').textContent = `현재가(${curP})에서 +${needRise.toFixed(2)} 상승 → ${+(curP+needRise).toFixed(2)} 도달 시 모든 ${n}개 포지션 수익실현`;
+  const needRise  = (start - worst) + profitReal;
+  $('pos-full-rec').textContent = `현재가(${curP})에서 +${needRise.toFixed(3)} 상승 → ${+(curP+needRise).toFixed(3)} 도달 시 모든 ${n}개 포지션 수익실현`;
 }
 
 // ─── PWA 아이콘 ───────────────────────────────────────────────
