@@ -4,12 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <meta name="theme-color" content="#0a0e1a"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="Grid Trader"/>
 <title>Grid Trader</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0e1a;color:#e0e6f0;min-height:100vh;-webkit-tap-highlight-color:transparent}
@@ -20,13 +15,10 @@ canvas{max-width:100%}
 ::-webkit-scrollbar{width:3px;height:3px}
 ::-webkit-scrollbar-thumb{background:#1e2a45;border-radius:2px}
 .hidden{display:none!important}
-/* 숫자 입력 */
 .num-input{width:100%;padding:10px 12px;background:#141929;border:0.5px solid #2a3a5a;border-radius:8px;color:#e0e6f0;font-size:14px;font-weight:500;outline:none}
-/* 탭 */
 .tab-bar{display:flex;gap:6px;margin-bottom:16px}
 .tab-btn{flex:1;padding:10px 6px;border:0.5px solid #1e2a45;border-radius:8px;background:transparent;color:#6b7a99;font-size:12px;font-weight:400;transition:all 0.15s}
 .tab-btn.active{background:#141929;color:#e0e6f0;border-color:#2a3a5a;font-weight:500}
-/* 카드 */
 .card{background:#141929;border-radius:8px;padding:12px 14px;margin-bottom:8px}
 .card-green{border-left:3px solid #1D9E75}
 .card-red{border-left:3px solid #ff4a4a}
@@ -34,939 +26,602 @@ canvas{max-width:100%}
 .card-gold{border-left:3px solid #ffaa4a}
 .row{display:flex;justify-content:space-between;align-items:center}
 .label{font-size:11px;color:#6b7a99}
-/* 테이블 */
 .tbl{border:0.5px solid #1e2a45;border-radius:8px;overflow:hidden}
 .tbl-head{background:#141929;padding:7px 12px;display:grid}
 .tbl-row{padding:8px 12px;border-top:0.5px solid #1e2a45;display:grid}
 .tbl-row:nth-child(even){background:#141929}
-/* 메인 버튼 */
-.main-btn{width:100%;padding:13px;background:#e0e6f0;color:#0a0e1a;border:none;border-radius:8px;font-size:14px;font-weight:600;margin-bottom:20px}
-.main-btn:active{opacity:0.85}
-/* 슬라이더 레이블 */
 .slider-wrap{margin-bottom:14px}
 .slider-label{display:flex;justify-content:space-between;margin-bottom:5px;font-size:12px;color:#6b7a99}
 .slider-val{font-size:13px;font-weight:500;color:#e0e6f0}
-/* 히트맵 */
-.heatmap-cell{border-radius:3px;min-height:24px;display:flex;align-items:center;justify-content:center;font-size:8px}
-/* 업로드 */
-.upload-box{border:2px dashed #2a3a5a;border-radius:16px;padding:28px 20px;text-align:center;background:#141929;cursor:pointer;transition:all 0.2s;margin-bottom:16px}
-.upload-box.drag{border-color:#4a9eff;background:rgba(74,158,255,0.05)}
+
 /* 앱바 */
 #app-bar{background:#0d1225;border-bottom:0.5px solid #1e2a45;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.app-bar-tabs{display:flex;gap:6px}
-.app-tab{padding:6px 12px;font-size:12px;border-radius:20px;border:0.5px solid #1e2a45;background:transparent;color:#6b7a99;transition:all 0.15s}
-.app-tab.active{background:#4a9eff;color:#fff;border-color:#4a9eff}
 #content{padding:16px}
+
+/* 종목 선택 */
+.asset-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.asset-btn{padding:12px 10px;border:0.5px solid #1e2a45;border-radius:10px;background:#141929;color:#6b7a99;font-size:12px;text-align:center;transition:all 0.15s;cursor:pointer}
+.asset-btn.active{border-color:#4a9eff;color:#4a9eff;background:rgba(74,158,255,0.08)}
+.asset-btn .asset-name{font-size:14px;font-weight:600;margin-bottom:3px}
+.asset-btn .asset-meta{font-size:10px;color:#6b7a99}
+.asset-btn.active .asset-meta{color:#4a9eff;opacity:0.7}
+
+/* 커스텀 설정 패널 */
+.custom-panel{background:#0d1225;border:0.5px solid #2a3a5a;border-radius:10px;padding:14px;margin-bottom:14px}
+.custom-panel-title{font-size:12px;color:#4a9eff;font-weight:500;margin-bottom:12px}
+.custom-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.custom-label{font-size:11px;color:#6b7a99;width:90px;flex-shrink:0}
+.custom-val{font-size:12px;font-weight:500;color:#e0e6f0;width:60px;text-align:right;flex-shrink:0}
+
+/* pip 뱃지 */
+.pip-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:500;background:rgba(74,158,255,0.15);color:#4a9eff;margin-left:6px}
 </style>
 </head>
 <body>
 
-<!-- 메인 앱 (항상 보임) -->
-<div id="main-app">
-  <div id="app-bar">
-    <div>
-      <div style="font-size:14px;font-weight:600">Grid Trader</div>
-      <div id="asset-label" style="font-size:10px;color:#4a9eff">CSV 업로드 후 백테스트 가능</div>
-    </div>
-    <div style="display:flex;gap:6px;align-items:center">
-      <div class="app-bar-tabs">
-        <button class="app-tab active" id="main-tab-backtest" onclick="switchMain('backtest')">📈 백테스트</button>
-        <button class="app-tab" id="main-tab-calc" onclick="switchMain('calc')">🧮 계산기</button>
-      </div>
-    </div>
+<div id="app-bar">
+  <div>
+    <div style="font-size:14px;font-weight:600">Grid Trader</div>
+    <div id="asset-label" style="font-size:10px;color:#4a9eff">종목을 선택하세요</div>
   </div>
-  <div id="content">
-    <!-- 백테스트 -->
-    <div id="tab-backtest">
-      <!-- CSV 업로드 (데이터 없을 때) -->
-      <div id="bt-upload-area">
-        <div class="upload-box" id="drop-zone" onclick="document.getElementById('csv-input').click()">
-          <div style="font-size:36px;margin-bottom:10px">📂</div>
-          <div style="font-size:15px;margin-bottom:6px">CSV 파일 업로드</div>
-          <div style="font-size:12px;color:#6b7a99;line-height:1.8">탭하거나 드래그앤드롭<br/>Investing.com CSV 형식 지원</div>
-          <input type="file" id="csv-input" accept=".csv" style="display:none"/>
-        </div>
-        <div id="upload-error" class="hidden" style="padding:10px 14px;background:rgba(220,53,69,0.1);border:0.5px solid #ff4a4a;border-radius:8px;font-size:12px;color:#ff4a4a;margin-bottom:16px"></div>
-        <div class="card">
-          <div class="label" style="margin-bottom:8px">지원 자산 (Investing.com CSV)</div>
-          <div class="row" style="padding:6px 0;border-bottom:0.5px solid #1e2a45"><span style="font-size:13px">📈 나스닥 100</span><span style="font-size:11px;color:#4a9eff">NAS100</span></div>
-          <div class="row" style="padding:6px 0;border-bottom:0.5px solid #1e2a45"><span style="font-size:13px">🥇 골드</span><span style="font-size:11px;color:#4a9eff">XAUUSD</span></div>
-          <div class="row" style="padding:6px 0;border-bottom:0.5px solid #1e2a45"><span style="font-size:13px">💱 EUR/USD</span><span style="font-size:11px;color:#4a9eff">EURUSD</span></div>
-          <div class="row" style="padding:6px 0;border-bottom:0.5px solid #1e2a45"><span style="font-size:13px">🛢️ 원유 WTI</span><span style="font-size:11px;color:#4a9eff">USOIL</span></div>
-          <div class="row" style="padding:6px 0"><span style="font-size:13px">📊 기타 모든 자산</span><span style="font-size:11px;color:#4a9eff">...</span></div>
-        </div>
-        <div class="card" style="margin-top:8px">
-          <div class="label" style="margin-bottom:8px">📥 CSV 받는 방법</div>
-          <div style="font-size:12px;line-height:2.2">1. kr.investing.com 접속<br/>2. 원하는 자산 검색<br/>3. <span style="color:#4a9eff">역사적 데이터</span> 탭 클릭<br/>4. <span style="color:#4aff9e">데이터 다운로드</span> 클릭</div>
-        </div>
-      </div>
-
-      <!-- 데이터 로드 후 백테스트 -->
-      <div id="bt-loaded-area" class="hidden">
-      <div class="card row" style="margin-bottom:12px">
-        <div><div id="bt-asset-name" style="font-size:13px;font-weight:500"></div><div id="bt-asset-info" style="font-size:11px;color:#6b7a99"></div></div>
-        <div style="text-align:right"><div id="bt-last-price" style="font-size:13px;color:#4aff9e"></div><div style="font-size:11px;color:#6b7a99">현재가</div></div>
-      </div>
-      <button onclick="resetData()" style="width:100%;padding:8px;margin-bottom:14px;background:transparent;color:#6b7a99;border:0.5px solid #1e2a45;border-radius:8px;font-size:12px">📂 다른 CSV 업로드</button>
-      <div class="slider-wrap"><div class="slider-label"><span>간격 (pt)</span><span class="slider-val" id="v-gap">50</span></div><input type="range" id="s-gap" min="10" max="500" step="10" value="50" oninput="updateSlider('gap')"/></div>
-      <div class="slider-wrap"><div class="slider-label"><span>목표수익 (pt)</span><span class="slider-val" id="v-profitTarget">300</span></div><input type="range" id="s-profitTarget" min="50" max="2000" step="50" value="300" oninput="updateSlider('profitTarget')"/></div>
-      <div class="slider-wrap"><div class="slider-label"><span>랏 사이즈</span><span class="slider-val" id="v-lotSize">1</span></div><input type="range" id="s-lotSize" min="0.1" max="10" step="0.1" value="1" oninput="updateSlider('lotSize')"/></div>
-      <div class="slider-wrap"><div class="slider-label"><span>초기자금</span><span class="slider-val" id="v-initialCash">$120,000</span></div><input type="range" id="s-initialCash" min="10000" max="1000000" step="10000" value="120000" oninput="updateSlider('initialCash')"/></div>
-      <div class="slider-wrap"><div class="slider-label"><span>출금 트리거</span><span class="slider-val" id="v-withdrawAt">$130,000</span></div><input type="range" id="s-withdrawAt" min="10000" max="1000000" step="5000" value="130000" oninput="updateSlider('withdrawAt')"/></div>
-      <div class="slider-wrap"><div class="slider-label"><span>출금 후 유지</span><span class="slider-val" id="v-withdrawTo">$120,000</span></div><input type="range" id="s-withdrawTo" min="10000" max="1000000" step="5000" value="120000" oninput="updateSlider('withdrawTo')"/></div>
-
-      <button class="main-btn" onclick="runBacktest()">백테스트 실행 ↗</button>
-
-      <!-- 결과 탭 -->
-      <div id="bt-result" class="hidden">
-        <div class="tab-bar" id="bt-tabs">
-          <button class="tab-btn active" onclick="switchBtTab('heatmap')">히트맵</button>
-          <button class="tab-btn" onclick="switchBtTab('monthly')">월별</button>
-          <button class="tab-btn" onclick="switchBtTab('equity')">차트</button>
-          <button class="tab-btn" onclick="switchBtTab('summary')">요약</button>
-          <button class="tab-btn" onclick="switchBtTab('withdraw')">출금</button>
-        </div>
-
-        <!-- 히트맵 -->
-        <div id="bt-heatmap">
-          <div style="overflow-x:auto"><table id="heatmap-table" style="width:100%;border-collapse:collapse;font-size:10px"></table></div>
-          <div class="card" style="margin-top:12px;font-size:11px;color:#6b7a99;line-height:2" id="heatmap-stats"></div>
-        </div>
-
-        <!-- 월별 차트 -->
-        <div id="bt-monthly" class="hidden">
-          <div style="display:flex;gap:12px;margin-bottom:8px;font-size:11px;color:#6b7a99">
-            <span><span style="display:inline-block;width:10px;height:10px;background:rgba(29,158,117,0.7);border-radius:2px;margin-right:4px"></span>수익</span>
-            <span><span style="display:inline-block;width:10px;height:10px;background:rgba(55,138,221,0.5);border-radius:2px;margin-right:4px"></span>출금</span>
-          </div>
-          <div style="position:relative;height:260px"><canvas id="bar-chart"></canvas></div>
-          <div id="yearly-cards" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px"></div>
-        </div>
-
-        <!-- 자산 차트 -->
-        <div id="bt-equity" class="hidden">
-          <div style="display:flex;gap:12px;margin-bottom:8px;font-size:11px;color:#6b7a99">
-            <span><span style="display:inline-block;width:16px;height:2px;background:#1D9E75;margin-right:4px;vertical-align:middle"></span>총자산</span>
-            <span><span style="display:inline-block;width:16px;height:2px;background:#4a9eff;margin-right:4px;vertical-align:middle"></span>가격</span>
-          </div>
-          <div style="position:relative;height:280px"><canvas id="equity-chart"></canvas></div>
-        </div>
-
-        <!-- 요약 -->
-        <div id="bt-summary" class="hidden" style="display:flex;flex-direction:column;gap:8px"></div>
-
-        <!-- 출금 -->
-        <div id="bt-withdraw" class="hidden">
-          <div id="withdraw-info" class="label" style="margin-bottom:10px"></div>
-          <div class="tbl">
-            <div class="tbl-head" style="grid-template-columns:1fr 1fr 1fr">
-              <span class="label">날짜</span><span class="label">출금액</span><span class="label">잔액</span>
-            </div>
-            <div id="withdraw-list" style="max-height:360px;overflow-y:auto"></div>
-          </div>
-        </div>
-      </div>
-      </div><!-- /bt-loaded-area -->
-    </div><!-- /tab-backtest -->
-
-    <!-- 계산기 -->
-    <div id="tab-calc" class="hidden">
-      <div class="tab-bar">
-        <button class="tab-btn active" onclick="switchCalcTab('liq')">🚨 청산</button>
-        <button class="tab-btn" onclick="switchCalcTab('rev')">🔍 역산</button>
-        <button class="tab-btn" onclick="switchCalcTab('pos')">📊 포지션+반등</button>
-      </div>
-      <div style="border-top:0.5px solid #1e2a45;padding-top:16px">
-
-        <!-- 청산 시뮬레이터 -->
-        <div id="calc-liq">
-          <div style="font-size:13px;font-weight:500;margin-bottom:4px">🚨 청산 시뮬레이터</div>
-          <div class="label" style="margin-bottom:16px">몇 번째 주문 체결 시 청산되는지 계산합니다</div>
-          <div class="slider-wrap"><div class="slider-label"><span>보유 자금</span><span class="slider-val" id="cv-liq-cash">$120,000</span></div><input type="range" id="cs-liq-cash" min="10000" max="1000000" step="10000" value="120000" oninput="calcLiq()"/></div>
-          <div style="margin-bottom:14px">
-            <div class="label" style="margin-bottom:5px">진입 시작가</div>
-            <input type="number" id="ni-liq-price" value="29000" step="100" oninput="calcLiq()" class="num-input"/>
-          </div>
-          <div class="slider-wrap"><div class="slider-label"><span>주문 간격 (pt)</span><span class="slider-val" id="cv-liq-gap">50</span></div><input type="range" id="cs-liq-gap" min="5" max="500" step="5" value="50" oninput="calcLiq()"/></div>
-          <div style="background:#0d1225;border:0.5px solid #2a3a5a;border-radius:10px;padding:14px;margin-bottom:14px">
-            <div style="font-size:12px;color:#4a9eff;margin-bottom:10px;font-weight:500">📦 랏 구성</div>
-            <div class="slider-wrap" style="margin-bottom:8px"><div class="slider-label"><span>기본 랏 <span style="color:#6b7a99">(증액 전)</span></span><span class="slider-val" id="cv-liq-lot1">1</span></div><input type="range" id="cs-liq-lot1" min="0.1" max="10" step="0.1" value="1" oninput="calcLiq()"/></div>
-            <div class="slider-wrap" style="margin-bottom:8px"><div class="slider-label"><span>증액 랏 <span style="color:#ffaa4a">(증액 이후)</span></span><span class="slider-val" id="cv-liq-lot2">2</span></div><input type="range" id="cs-liq-lot2" min="0.1" max="10" step="0.1" value="2" oninput="calcLiq()"/></div>
-            <div class="slider-wrap"><div class="slider-label"><span>증액 시작 번째</span><span class="slider-val" id="cv-liq-scale">5번째부터</span></div><input type="range" id="cs-liq-scale" min="1" max="50" step="1" value="5" oninput="calcLiq()"/></div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
-            <div class="card card-green" style="text-align:center"><div class="label">안전 구간</div><div id="liq-safe-n" style="font-size:22px;font-weight:700;color:#4aff9e;margin:6px 0">-</div><div id="liq-safe-loss" style="font-size:10px;color:#6b7a99"></div></div>
-            <div class="card card-red" style="text-align:center"><div class="label">청산 발생</div><div id="liq-danger-n" style="font-size:22px;font-weight:700;color:#ff4a4a;margin:6px 0">-</div><div id="liq-danger-drop" style="font-size:10px;color:#6b7a99"></div></div>
-            <div class="card" style="text-align:center;border-left:3px solid #ffaa4a"><div class="label">버팀 하락폭</div><div id="liq-survive-pt" style="font-size:22px;font-weight:700;color:#ffaa4a;margin:6px 0">-</div><div id="liq-survive-pct" style="font-size:10px;color:#6b7a99"></div></div>
-          </div>
-          <div style="margin-bottom:14px">
-            <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7a99;margin-bottom:6px"><span>자금 소진율</span><span id="liq-pct-txt">0%</span></div>
-            <div style="height:8px;background:#1e2a45;border-radius:4px;overflow:hidden"><div id="liq-progress" style="height:100%;background:linear-gradient(90deg,#4aff9e,#ffaa4a,#ff4a4a);border-radius:4px;transition:width 0.3s;width:0%"></div></div>
-          </div>
-          <div class="tbl">
-            <div class="tbl-head" style="grid-template-columns:36px 1fr 50px 1fr 1fr"><span class="label">#</span><span class="label">진입가</span><span class="label">랏</span><span class="label">이번손실</span><span class="label">누적손실</span></div>
-            <div id="liq-table" style="max-height:260px;overflow-y:auto"></div>
-          </div>
-        </div>
-
-        <!-- 역산 계산기 -->
-        <div id="calc-rev" class="hidden">
-          <div style="font-size:13px;font-weight:500;margin-bottom:4px">🔍 역산 계산기</div>
-          <div class="label" style="margin-bottom:16px">현재가·목표가·조건 입력 → 몇 번째 주문이 체결되고 누적손실이 얼마인지 계산합니다</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-            <div>
-              <div class="label" style="margin-bottom:5px">현재가</div>
-              <input type="number" id="ni-rev-cur" value="29000" step="100" oninput="calcRev()" class="num-input"/>
-            </div>
-            <div>
-              <div class="label" style="margin-bottom:5px">하락 목표가</div>
-              <input type="number" id="ni-rev-tgt" value="25000" step="100" oninput="calcRev()" style="width:100%;padding:10px 12px;background:#141929;border:0.5px solid #ff4a4a;border-radius:8px;color:#ff4a4a;font-size:14px;font-weight:500;outline:none"/>
-            </div>
-          </div>
-          <div class="slider-wrap"><div class="slider-label"><span>보유 자금</span><span class="slider-val" id="cv-rev-cash">$120,000</span></div><input type="range" id="cs-rev-cash" min="10000" max="1000000" step="10000" value="120000" oninput="calcRev()"/></div>
-          <div class="slider-wrap"><div class="slider-label"><span>주문 간격 (pt)</span><span class="slider-val" id="cv-rev-gap">50</span></div><input type="range" id="cs-rev-gap" min="5" max="500" step="5" value="50" oninput="calcRev()"/></div>
-          <div style="background:#0d1225;border:0.5px solid #2a3a5a;border-radius:10px;padding:14px;margin-bottom:14px">
-            <div style="font-size:12px;color:#4a9eff;margin-bottom:10px;font-weight:500">📦 랏 구성</div>
-            <div class="slider-wrap" style="margin-bottom:8px"><div class="slider-label"><span>기본 랏</span><span class="slider-val" id="cv-rev-lot1">1</span></div><input type="range" id="cs-rev-lot1" min="0.1" max="10" step="0.1" value="1" oninput="calcRev()"/></div>
-            <div class="slider-wrap" style="margin-bottom:8px"><div class="slider-label"><span>증액 랏 <span style="color:#ffaa4a">(증액 이후)</span></span><span class="slider-val" id="cv-rev-lot2">2</span></div><input type="range" id="cs-rev-lot2" min="0.1" max="10" step="0.1" value="2" oninput="calcRev()"/></div>
-            <div class="slider-wrap"><div class="slider-label"><span>증액 시작 번째</span><span class="slider-val" id="cv-rev-scale">5번째부터</span></div><input type="range" id="cs-rev-scale" min="1" max="50" step="1" value="5" oninput="calcRev()"/></div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
-            <div class="card" style="border-left:3px solid #4a9eff;text-align:center"><div class="label">총 하락폭</div><div id="rev-drop-pt" style="font-size:20px;font-weight:700;margin:6px 0"></div><div id="rev-drop-pct" style="font-size:11px;color:#ffaa4a"></div></div>
-            <div class="card card-red" style="text-align:center"><div class="label">목표가 체결 번째</div><div id="rev-order-n" style="font-size:20px;font-weight:700;color:#ff4a4a;margin:6px 0"></div><div id="rev-order-price" style="font-size:11px;color:#6b7a99"></div></div>
-          </div>
-          <div style="background:#141929;border:0.5px solid #1e2a45;border-radius:10px;padding:14px;margin-bottom:14px">
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
-              <div style="text-align:center"><div class="label">누적 손실</div><div id="rev-cum-loss" style="font-size:18px;font-weight:700;color:#ff4a4a;margin-top:5px"></div></div>
-              <div style="text-align:center"><div class="label">보유 자금</div><div id="rev-cash-disp" style="font-size:18px;font-weight:700;color:#4aff9e;margin-top:5px"></div></div>
-              <div style="text-align:center"><div class="label">잔여 자금</div><div id="rev-remaining" style="font-size:18px;font-weight:700;margin-top:5px"></div></div>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7a99;margin-bottom:6px"><span>자금 소진율</span><span id="rev-pct-txt"></span></div>
-            <div style="height:8px;background:#1e2a45;border-radius:4px;overflow:hidden"><div id="rev-progress" style="height:100%;background:linear-gradient(90deg,#4aff9e,#ffaa4a,#ff4a4a);border-radius:4px;transition:width 0.3s;width:0%"></div></div>
-            <div id="rev-status" style="margin-top:10px;font-size:12px;font-weight:500;text-align:center;padding:6px;border-radius:6px"></div>
-          </div>
-          <div class="tbl">
-            <div class="tbl-head" style="grid-template-columns:36px 1fr 50px 1fr 1fr"><span class="label">#</span><span class="label">진입가</span><span class="label">랏</span><span class="label">이번손실</span><span class="label">누적손실</span></div>
-            <div id="rev-table" style="max-height:240px;overflow-y:auto"></div>
-          </div>
-        </div>
-
-        <!-- 포지션 현황 + 반등 (합치기) -->
-        <div id="calc-pos" class="hidden">
-          <div style="font-size:13px;font-weight:500;margin-bottom:4px">📊 포지션 현황 & 반등 수익</div>
-          <div class="label" style="margin-bottom:16px">현재가 입력 시 체결 포지션 수 자동 계산</div>
-
-          <!-- 핵심 입력 3개 -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-            <div>
-              <div class="label" style="margin-bottom:5px">🔵 1번 체결가 (최근 고점)</div>
-              <input type="number" id="ni-pos-start" value="29000" step="50" oninput="calcPos()" class="num-input"/>
-            </div>
-            <div>
-              <div class="label" style="margin-bottom:5px">🔴 현재가</div>
-              <input type="number" id="ni-pos-cur" value="27500" step="50" oninput="calcPos()" style="width:100%;padding:10px 12px;background:#141929;border:0.5px solid #ff4a4a;border-radius:8px;color:#ff4a4a;font-size:14px;font-weight:500;outline:none"/>
-            </div>
-          </div>
-
-          <div class="slider-wrap"><div class="slider-label"><span>간격 (pt)</span><span class="slider-val" id="cv-pos-gap">50</span></div><input type="range" id="cs-pos-gap" min="5" max="500" step="5" value="50" oninput="calcPos()"/></div>
-          <div class="slider-wrap"><div class="slider-label"><span>랏 사이즈</span><span class="slider-val" id="cv-pos-lot">1</span></div><input type="range" id="cs-pos-lot" min="0.1" max="10" step="0.1" value="1" oninput="calcPos()"/></div>
-          <div class="slider-wrap"><div class="slider-label"><span>목표수익 (pt)</span><span class="slider-val" id="cv-pos-profit">300</span></div><input type="range" id="cs-pos-profit" min="50" max="2000" step="50" value="300" oninput="calcPos()"/></div>
-
-          <!-- 자동계산 결과: 현재 포지션 상태 -->
-          <div style="background:#0d1225;border:0.5px solid #2a3a5a;border-radius:10px;padding:14px;margin-bottom:16px">
-            <div style="font-size:12px;color:#4a9eff;font-weight:500;margin-bottom:12px">📌 현재 포지션 상태 (자동계산)</div>
-
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-              <div style="background:#141929;border-radius:8px;padding:10px;text-align:center">
-                <div class="label">체결된 포지션</div>
-                <div id="pos-count" style="font-size:24px;font-weight:700;color:#e0e6f0;margin:4px 0"></div>
-                <div class="label">개</div>
-              </div>
-              <div style="background:#141929;border-radius:8px;padding:10px;text-align:center">
-                <div class="label">평균 단가</div>
-                <div id="pos-avg" style="font-size:24px;font-weight:700;color:#4a9eff;margin:4px 0"></div>
-                <div class="label">pt</div>
-              </div>
-            </div>
-
-            <div style="background:#141929;border-radius:8px;padding:12px;margin-bottom:10px">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-                <span class="label">현재 평가 손익</span>
-                <span id="pos-unreal" style="font-size:18px;font-weight:700"></span>
-              </div>
-              <div style="height:6px;background:#1e2a45;border-radius:3px;overflow:hidden">
-                <div id="pos-pnl-bar" style="height:100%;border-radius:3px;transition:width 0.3s"></div>
-              </div>
-              <div style="display:flex;justify-content:space-between;font-size:10px;color:#6b7a99;margin-top:5px">
-                <span>최저 진입가: <span id="pos-worst" style="color:#ff4a4a"></span></span>
-                <span>손익분기: <span id="pos-be" style="color:#4a9eff"></span></span>
-              </div>
-            </div>
-
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11px">
-              <div style="background:#141929;border-radius:6px;padding:8px;text-align:center">
-                <div class="label">총 랏</div>
-                <div id="pos-total-lot" style="font-weight:600;margin-top:3px;color:#e0e6f0"></div>
-              </div>
-              <div style="background:#141929;border-radius:6px;padding:8px;text-align:center">
-                <div class="label">하락폭</div>
-                <div id="pos-drop-pt" style="font-weight:600;margin-top:3px;color:#ffaa4a"></div>
-              </div>
-              <div style="background:#141929;border-radius:6px;padding:8px;text-align:center">
-                <div class="label">하락률</div>
-                <div id="pos-drop-pct" style="font-weight:600;margin-top:3px;color:#ffaa4a"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 반등 시나리오 -->
-          <div style="font-size:12px;color:#4aff9e;font-weight:500;margin-bottom:10px">
-            📈 반등하면 어떻게 될까?
-            <span class="label" style="font-size:10px;margin-left:6px">현재 손실 기준</span>
-          </div>
-          <div id="pos-scenarios"></div>
-
-          <div style="padding:12px;background:rgba(74,158,255,0.05);border:0.5px solid #2a3a5a;border-radius:8px;margin-top:4px">
-            <div class="label" style="margin-bottom:4px">💡 전체 수익실현 조건</div>
-            <div id="pos-full-rec" style="font-size:13px;font-weight:500;color:#4a9eff"></div>
-          </div>
-        </div>
-
-      </div>
+  <div style="display:flex;gap:6px;align-items:center">
+    <div style="display:flex;gap:6px">
+      <button class="tab-btn active" id="main-tab-liq" onclick="switchMain('liq')" style="flex:none;padding:6px 12px;font-size:12px;border-radius:20px">🚨 청산</button>
+      <button class="tab-btn" id="main-tab-rev" onclick="switchMain('rev')" style="flex:none;padding:6px 12px;font-size:12px;border-radius:20px">🔍 역산</button>
+      <button class="tab-btn" id="main-tab-pos" onclick="switchMain('pos')" style="flex:none;padding:6px 12px;font-size:12px;border-radius:20px">📊 포지션</button>
     </div>
   </div>
 </div>
-<script>
-// ── 전역 상태 ──────────────────────────────────────
-let PRICE_DATA = [];
-let ASSET_NAME = '';
-let btResult = null;
-let charts = {};
 
-// ── 유틸 ───────────────────────────────────────────
-const fmt = n => Math.round(n||0).toLocaleString();
-const fmtD = n => (n>=0?'+':'-')+'$'+fmt(Math.abs(n));
-const $ = id => document.getElementById(id);
+<div id="content">
 
-// ── CSV 파싱 ───────────────────────────────────────
-function parseCSV(text) {
-  const result = Papa.parse(text.trim(), {header:true, skipEmptyLines:true});
-  const rows = [];
-  for (const row of result.data) {
-    try {
-      const keys = Object.keys(row);
-      const dateKey = keys.find(k=>k.includes('날짜')||k.toLowerCase().includes('date')||k.toLowerCase().includes('time'));
-      const closeKey = keys.find(k=>k.includes('종가')||k.toLowerCase()==='close'||k.toLowerCase().includes('price'));
-      const highKey = keys.find(k=>k.includes('고가')||k.toLowerCase()==='high');
-      const lowKey = keys.find(k=>k.includes('저가')||k.toLowerCase()==='low');
-      const openKey = keys.find(k=>k.includes('시가')||k.toLowerCase()==='open');
-      if (!dateKey||!closeKey) continue;
-      const clean = v => parseFloat((v||'0').toString().replace(/,/g,'').replace(/"/g,'').trim());
-      const close = clean(row[closeKey]);
-      if (!close||isNaN(close)) continue;
-      rows.push({
-        date: (row[dateKey]||'').toString().replace(/"/g,'').trim(),
-        open: openKey?clean(row[openKey]):close,
-        high: highKey?clean(row[highKey]):close*1.005,
-        low: lowKey?clean(row[lowKey]):close*0.995,
-        close
-      });
-    } catch(e) { continue; }
-  }
-  rows.reverse();
-  return rows;
-}
+  <!-- ── 종목 선택 (공통) ── -->
+  <div class="asset-grid" id="asset-selector">
+    <button class="asset-btn active" onclick="selectAsset('NAS100')" id="ab-NAS100">
+      <div class="asset-name">NAS100</div>
+      <div class="asset-meta">나스닥 100 · $1/pt</div>
+    </button>
+    <button class="asset-btn" onclick="selectAsset('XAUUSD')" id="ab-XAUUSD">
+      <div class="asset-name">XAUUSD</div>
+      <div class="asset-meta">골드 · $3.80/pt</div>
+    </button>
+    <button class="asset-btn" onclick="selectAsset('USDJPY')" id="ab-USDJPY">
+      <div class="asset-name">USD/JPY</div>
+      <div class="asset-meta">달러엔 · $6.7/0.01pip</div>
+    </button>
+    <button class="asset-btn" onclick="selectAsset('GBPJPY')" id="ab-GBPJPY">
+      <div class="asset-name">GBP/JPY</div>
+      <div class="asset-meta">파운드엔 · $6.7/0.01pip</div>
+    </button>
+  </div>
 
-// ── 파일 업로드 ────────────────────────────────────
-$('csv-input').addEventListener('change', e => handleFile(e.target.files[0]));
-
-const dropZone = $('drop-zone');
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
-dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag'); handleFile(e.dataTransfer.files[0]); });
-
-function handleFile(file) {
-  if (!file) return;
-  $('upload-error').classList.add('hidden');
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const data = parseCSV(e.target.result);
-      if (data.length < 10) { showError('데이터가 너무 적어요. 최소 10일 이상 필요해요.'); return; }
-      PRICE_DATA = data;
-      ASSET_NAME = file.name.replace(/\.[^.]+$/,'').replace(/_/g,' ');
-      loadApp();
-    } catch(err) { showError('CSV 파싱 오류: ' + err.message); }
-  };
-  reader.readAsText(file, 'utf-8');
-}
-
-function showError(msg) {
-  const el = $('upload-error');
-  el.textContent = '⚠️ ' + msg;
-  el.classList.remove('hidden');
-}
-
-function loadApp() {
-  $('bt-upload-area').classList.add('hidden');
-  $('bt-loaded-area').classList.remove('hidden');
-  $('asset-label').textContent = ASSET_NAME;
-  $('bt-asset-name').textContent = ASSET_NAME;
-  const last = PRICE_DATA[PRICE_DATA.length-1];
-  const first = PRICE_DATA[0];
-  $('bt-asset-info').textContent = PRICE_DATA.length+'일 · '+first.date.slice(0,10)+' ~ '+last.date.slice(0,10);
-  $('bt-last-price').textContent = fmt(last.close);
-  // 계산기 슬라이더 초기값을 현재가로
-  const cp = Math.round(last.close);
-  $('cs-rev-cur').value = cp; $('cv-rev-cur').textContent = cp.toLocaleString();
-  $('cs-rev-tgt').value = Math.round(cp*0.85); $('cv-rev-tgt').textContent = Math.round(cp*0.85).toLocaleString();
-  $('cs-avg-start').value = cp; $('cv-avg-start').textContent = cp.toLocaleString();
-  $('cs-avg-cur').value = Math.round(cp*0.96); $('cv-avg-cur').textContent = Math.round(cp*0.96).toLocaleString();
-  $('cs-rec-start').value = cp; $('cv-rec-start').textContent = cp.toLocaleString();
-  calcLiq(); calcRev(); calcAvg(); calcRec();
-}
-
-function resetData() {
-  PRICE_DATA = []; ASSET_NAME = ''; btResult = null;
-  $('bt-upload-area').classList.remove('hidden');
-  $('bt-loaded-area').classList.add('hidden');
-  $('bt-result').classList.add('hidden');
-  $('asset-label').textContent = 'CSV 업로드 후 백테스트 가능';
-  $('csv-input').value = '';
-  Object.values(charts).forEach(c => { try { c.destroy(); } catch(e){} });
-  charts = {};
-}
-
-// ── 탭 전환 ────────────────────────────────────────
-function switchMain(tab) {
-  $('tab-backtest').classList.toggle('hidden', tab!=='backtest');
-  $('tab-calc').classList.toggle('hidden', tab!=='calc');
-  $('main-tab-backtest').classList.toggle('active', tab==='backtest');
-  $('main-tab-calc').classList.toggle('active', tab==='calc');
-}
-
-let currentBtTab = 'heatmap';
-function switchBtTab(tab) {
-  currentBtTab = tab;
-  ['heatmap','monthly','equity','summary','withdraw'].forEach(t => {
-    $('bt-'+t).classList.toggle('hidden', t!==tab);
-  });
-  document.querySelectorAll('#bt-tabs .tab-btn').forEach((b,i) => {
-    b.classList.toggle('active', ['heatmap','monthly','equity','summary','withdraw'][i]===tab);
-  });
-  if (btResult) {
-    if (tab==='equity') drawEquity();
-    if (tab==='monthly') drawBar();
-  }
-}
-
-let currentCalcTab = 'liq';
-function switchCalcTab(tab) {
-  currentCalcTab = tab;
-  ['liq','rev','pos'].forEach(t => $('calc-'+t).classList.toggle('hidden', t!==tab));
-  document.querySelectorAll('#tab-calc .tab-btn').forEach((b,i) => {
-    b.classList.toggle('active', ['liq','rev','pos'][i]===tab);
-  });
-}
-
-// ── 슬라이더 업데이트 ──────────────────────────────
-function updateSlider(key) {
-  const val = parseFloat($('s-'+key).value);
-  const money = ['initialCash','withdrawAt','withdrawTo'];
-  $('v-'+key).textContent = money.includes(key) ? '$'+val.toLocaleString() : val;
-}
-
-// ── 백테스트 엔진 ──────────────────────────────────
-function runBacktest() {
-  if (!PRICE_DATA.length) return;
-  const params = {
-    gap: parseFloat($('s-gap').value),
-    profitTarget: parseFloat($('s-profitTarget').value),
-    initialCash: parseFloat($('s-initialCash').value),
-    lotSize: parseFloat($('s-lotSize').value),
-    withdrawAt: parseFloat($('s-withdrawAt').value),
-    withdrawTo: parseFloat($('s-withdrawTo').value),
-  };
-
-  let cash = params.initialCash;
-  let positions = [], pending = [];
-  let totalRealized = 0, totalWithdrawn = 0, cycles = 0;
-  const daily = [], withdrawals = [], monthly = {};
-  const maxPos = Math.min(Math.floor(params.initialCash / params.gap / 2), 200);
-
-  const setupGrid = p => {
-    pending = Array.from({length:maxPos}, (_,i) => Math.round((p - params.gap*(i+1))*100)/100);
-  };
-  setupGrid(PRICE_DATA[0].close);
-
-  for (const d of PRICE_DATA) {
-    const {date, high, low, close} = d;
-    const parts = date.replace(/ /g,'').split('-').filter(Boolean);
-    const ym = parts.length>=2 ? `${parts[0]}-${parts[1].padStart(2,'0')}` : date.slice(0,7);
-
-    const rem = [];
-    for (const lp of pending) { if (low<=lp) positions.push({entry:lp,active:true}); else rem.push(lp); }
-    pending = rem;
-
-    let dayP = 0;
-    for (const pos of positions) {
-      if (pos.active && high >= pos.entry+params.profitTarget) {
-        const p = params.profitTarget*params.lotSize;
-        cash+=p; totalRealized+=p; dayP+=p;
-        pos.active=false; pending.push(pos.entry); pending.sort((a,b)=>b-a);
-      }
-    }
-
-    let withdrawn = 0;
-    if (cash>=params.withdrawAt) {
-      withdrawn = cash-params.withdrawTo;
-      totalWithdrawn+=withdrawn; cash-=withdrawn;
-      withdrawals.push({date, amount:Math.round(withdrawn), cashAfter:Math.round(cash)});
-    }
-
-    const active = positions.filter(p=>p.active);
-    const unreal = active.reduce((s,p)=>s+(close-p.entry)*params.lotSize, 0);
-    const equity = cash+unreal;
-
-    if (!monthly[ym]) monthly[ym]={profit:0,withdrawn:0,trades:0,minEq:Infinity,maxEq:-Infinity};
-    monthly[ym].profit+=dayP; monthly[ym].withdrawn+=withdrawn;
-    if (dayP>0) monthly[ym].trades++;
-    monthly[ym].minEq=Math.min(monthly[ym].minEq,equity);
-    monthly[ym].maxEq=Math.max(monthly[ym].maxEq,equity);
-
-    if (active.length===0&&dayP>0) { cycles++; positions=[]; setupGrid(close); }
-    daily.push({date,price:close,active:active.length,unrealized:Math.round(unreal),cash:Math.round(cash),equity:Math.round(equity),withdrawn:Math.round(withdrawn),dayProfit:Math.round(dayP)});
-  }
-
-  const equities = daily.map(d=>d.equity);
-  const cleanMonthly = {};
-  for (const [k,v] of Object.entries(monthly)) {
-    cleanMonthly[k]={profit:Math.round(v.profit),withdrawn:Math.round(v.withdrawn),trades:v.trades,
-      minEq:v.minEq===Infinity?0:Math.round(v.minEq),maxEq:v.maxEq===-Infinity?0:Math.round(v.maxEq)};
-  }
-
-  btResult = {daily, totalRealized:Math.round(totalRealized), totalWithdrawn:Math.round(totalWithdrawn),
-    finalCash:Math.round(cash), cycles, withdrawals, monthly:cleanMonthly,
-    minEquity:Math.round(Math.min(...equities)), maxEquity:Math.round(Math.max(...equities)), params};
-
-  renderResults();
-}
-
-// ── 결과 렌더링 ────────────────────────────────────
-function renderResults() {
-  $('bt-result').classList.remove('hidden');
-  renderHeatmap();
-  renderSummary();
-  renderWithdrawals();
-  switchBtTab('heatmap');
-}
-
-function heatColor(val, max) {
-  if (!val||val===0) return '#141929';
-  const t = Math.min(val/max, 1);
-  return `rgba(29,158,117,${0.15+t*0.75})`;
-}
-
-function renderHeatmap() {
-  const m = btResult.monthly;
-  const years = [...new Set(Object.keys(m).map(k=>k.slice(0,4)))].sort();
-  const months = ['01','02','03','04','05','06','07','08','09','10','11','12'];
-  const maxP = Math.max(1, ...Object.values(m).map(v=>v.profit));
-
-  let html = '<thead><tr><th style="padding:4px;color:#6b7a99;text-align:left;font-weight:400;min-width:36px">연도</th>';
-  months.forEach(mo => html+=`<th style="padding:2px;color:#6b7a99;text-align:center;font-weight:400;min-width:22px;font-size:9px">${Number(mo)}</th>`);
-  html+='<th style="padding:4px;color:#6b7a99;text-align:right;font-weight:400;min-width:50px">합계</th></tr></thead><tbody>';
-
-  years.forEach(yr => {
-    const total = months.reduce((s,mo)=>s+(m[`${yr}-${mo}`]?.profit||0),0);
-    html+=`<tr><td style="padding:3px 4px;color:#6b7a99;font-size:11px;font-weight:500">${yr}</td>`;
-    months.forEach(mo => {
-      const profit = m[`${yr}-${mo}`]?.profit||0;
-      const bg = heatColor(profit,maxP);
-      const txt = profit>0?(profit>=10000?Math.round(profit/1000)+'K':''):'';
-      const color = profit>maxP*0.4?'#fff':'#6b7a99';
-      html+=`<td style="padding:2px"><div class="heatmap-cell" style="background:${bg};color:${color}" title="${yr}-${mo}: $${fmt(profit)}">${txt}</div></td>`;
-    });
-    const tc = total>0?'#4aff9e':'#6b7a99';
-    html+=`<td style="padding:3px 4px;text-align:right;font-size:11px;font-weight:500;color:${tc}">${total>0?'+$'+Math.round(total/1000)+'K':'-'}</td></tr>`;
-  });
-  html+='</tbody>';
-  $('heatmap-table').innerHTML = html;
-
-  let maxMo='',maxVal=0;
-  for (const [k,v] of Object.entries(m)) { if(v.profit>maxVal){maxVal=v.profit;maxMo=k;} }
-  const profitMonths = Object.values(m).filter(v=>v.profit>0).length;
-  $('heatmap-stats').innerHTML = `🟩 최고 수익월: ${maxMo} ($${fmt(maxVal)})<br>📊 수익 발생: ${profitMonths}개월<br>💸 총 출금: $${fmt(btResult.totalWithdrawn)} (${btResult.withdrawals.length}회)`;
-}
-
-function drawEquity() {
-  if (charts.eq) { charts.eq.destroy(); delete charts.eq; }
-  const step = Math.max(1, Math.floor(btResult.daily.length/80));
-  const data = btResult.daily.filter((_,i)=>i%step===0);
-  charts.eq = new Chart($('equity-chart'), {
-    type:'line',
-    data:{
-      labels:data.map(d=>d.date.slice(0,7)),
-      datasets:[
-        {label:'총자산',data:data.map(d=>d.equity),borderColor:'#1D9E75',backgroundColor:'rgba(29,158,117,0.08)',fill:true,tension:0.3,pointRadius:0,borderWidth:2,yAxisID:'y'},
-        {label:ASSET_NAME,data:data.map(d=>d.price),borderColor:'#4a9eff',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:0,borderWidth:1.5,borderDash:[4,3],yAxisID:'y2'}
-      ]
-    },
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': $'+Math.round(c.raw).toLocaleString()}}},
-      scales:{
-        x:{ticks:{color:'#6b7a99',font:{size:10},maxTicksLimit:8},grid:{color:'rgba(255,255,255,0.04)'}},
-        y:{position:'left',ticks:{color:'#1D9E75',font:{size:10},callback:v=>'$'+Math.round(v/1000)+'K'},grid:{color:'rgba(255,255,255,0.04)'}},
-        y2:{position:'right',ticks:{color:'#4a9eff',font:{size:10},callback:v=>Math.round(v/1000)+'K'},grid:{display:false}}
-      }
-    }
-  });
-}
-
-function drawBar() {
-  if (charts.bar) { charts.bar.destroy(); delete charts.bar; }
-  const entries = Object.entries(btResult.monthly).filter(([,v])=>v.profit>0||v.withdrawn>0);
-  charts.bar = new Chart($('bar-chart'), {
-    type:'bar',
-    data:{
-      labels:entries.map(([k])=>k),
-      datasets:[
-        {label:'수익',data:entries.map(([,v])=>v.profit),backgroundColor:'rgba(29,158,117,0.7)',borderRadius:3},
-        {label:'출금',data:entries.map(([,v])=>v.withdrawn),backgroundColor:'rgba(55,138,221,0.5)',borderRadius:3}
-      ]
-    },
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': $'+Math.round(c.raw).toLocaleString()}}},
-      scales:{
-        x:{ticks:{color:'#6b7a99',font:{size:9},maxRotation:45,maxTicksLimit:20},grid:{display:false}},
-        y:{ticks:{color:'#6b7a99',font:{size:10},callback:v=>'$'+Math.round(v/1000)+'K'},grid:{color:'rgba(255,255,255,0.04)'}}
-      }
-    }
-  });
-
-  // 연도별 카드
-  const years = [...new Set(Object.keys(btResult.monthly).map(k=>k.slice(0,4)))].sort();
-  let cardsHtml = '';
-  years.forEach(yr => {
-    const total = Object.entries(btResult.monthly).filter(([k])=>k.startsWith(yr)).reduce((s,[,v])=>s+v.profit,0);
-    const wd = Object.entries(btResult.monthly).filter(([k])=>k.startsWith(yr)).reduce((s,[,v])=>s+v.withdrawn,0);
-    if (total>0) cardsHtml+=`<div class="card"><div class="label">${yr}년</div><div style="font-size:15px;font-weight:500;color:#4aff9e;margin-top:4px">+$${fmt(total)}</div><div style="font-size:11px;color:#6b7a99">출금 $${fmt(wd)}</div></div>`;
-  });
-  $('yearly-cards').innerHTML = cardsHtml;
-}
-
-function renderSummary() {
-  const r = btResult;
-  const p = r.params;
-  const items = [
-    ['초기자금','$'+fmt(p.initialCash),'#e0e6f0',''],
-    ['총 실현수익','+$'+fmt(r.totalRealized),'#4aff9e','card-green'],
-    ['총 출금액','$'+fmt(r.totalWithdrawn),'#4a9eff','card-blue'],
-    ['출금 횟수',r.withdrawals.length+'회','#e0e6f0',''],
-    ['계좌 잔액','$'+fmt(r.finalCash),r.finalCash>p.initialCash?'#4aff9e':'#ff4a4a',r.finalCash>p.initialCash?'card-green':'card-red'],
-    ['최저 자산','$'+fmt(r.minEquity),r.minEquity<0?'#ff4a4a':'#ffaa4a',r.minEquity<0?'card-red':'card-gold'],
-    ['완료 사이클',r.cycles+'회','#e0e6f0',''],
-    ['수익률',(r.totalRealized/p.initialCash*100).toFixed(1)+'%','#4aff9e','card-green'],
-    ['청산 여부',r.minEquity>0?'없음 ✓':'발생 ✗',r.minEquity>0?'#4aff9e':'#ff4a4a',r.minEquity>0?'card-green':'card-red'],
-  ];
-  $('bt-summary').innerHTML = items.map(([l,v,c,cls])=>`
-    <div class="card ${cls} row"><span class="label">${l}</span><span style="font-size:14px;font-weight:500;color:${c}">${v}</span></div>
-  `).join('');
-}
-
-function renderWithdrawals() {
-  const r = btResult;
-  $('withdraw-info').textContent = `총 ${r.withdrawals.length}회 · $${fmt(r.totalWithdrawn)}`;
-  $('withdraw-list').innerHTML = r.withdrawals.map((w,i)=>`
-    <div class="tbl-row" style="grid-template-columns:1fr 1fr 1fr;background:${i%2===0?'transparent':'#141929'}">
-      <span style="font-size:11px;color:#6b7a99">${w.date.slice(0,10)}</span>
-      <span style="font-size:12px;color:#4aff9e;font-weight:500">+$${fmt(w.amount)}</span>
-      <span style="font-size:12px">$${fmt(w.cashAfter)}</span>
+  <!-- 커스텀 pip 설정 -->
+  <div class="custom-panel" id="pip-panel">
+    <div class="custom-panel-title">⚙️ 종목 설정 <span id="pip-asset-name" style="color:#e0e6f0"></span></div>
+    <div class="custom-row">
+      <span class="custom-label">단위 표시</span>
+      <span id="pip-unit-label" style="font-size:12px;color:#4aff9e;font-weight:500"></span>
     </div>
-  `).join('');
+    <div class="custom-row">
+      <span class="custom-label">1랏 × 1단위 가치</span>
+      <div style="display:flex;align-items:center;gap:6px;flex:1">
+        <input type="range" id="s-pip-val" min="0.1" max="20" step="0.1" value="1" oninput="updatePipVal()" style="flex:1"/>
+        <span class="custom-val" id="v-pip-val">$1.00</span>
+      </div>
+    </div>
+    <div class="custom-row">
+      <span class="custom-label">기본 간격</span>
+      <div style="display:flex;align-items:center;gap:6px;flex:1">
+        <input type="range" id="s-default-gap" min="1" max="500" step="1" value="50" oninput="updateDefaultGap()"/>
+        <span class="custom-val" id="v-default-gap">50</span>
+      </div>
+    </div>
+    <div style="margin-top:10px;padding:10px;background:#141929;border-radius:8px;font-size:11px;color:#6b7a99;line-height:1.8">
+      💡 현재 설정: <span id="pip-calc-example" style="color:#4aff9e"></span>
+    </div>
+  </div>
+
+  <!-- ── 청산 시뮬레이터 ── -->
+  <div id="tab-liq">
+    <div style="font-size:13px;font-weight:500;margin-bottom:4px">🚨 청산 시뮬레이터</div>
+    <div class="label" style="margin-bottom:16px">몇 번째 주문 체결 시 청산되는지 계산합니다</div>
+    <div class="slider-wrap"><div class="slider-label"><span>보유 자금</span><span class="slider-val" id="cv-liq-cash">$120,000</span></div><input type="range" id="cs-liq-cash" min="10000" max="1000000" step="10000" value="120000" oninput="calcLiq()"/></div>
+    <div style="margin-bottom:14px">
+      <div class="label" style="margin-bottom:5px">진입 시작가 <span id="liq-price-unit" class="pip-badge"></span></div>
+      <input type="number" id="ni-liq-price" value="20000" step="100" oninput="calcLiq()" class="num-input"/>
+    </div>
+    <div class="slider-wrap"><div class="slider-label"><span>주문 간격 <span id="liq-gap-unit" class="pip-badge"></span></span><span class="slider-val" id="cv-liq-gap">50</span></div><input type="range" id="cs-liq-gap" min="1" max="500" step="1" value="50" oninput="calcLiq()"/></div>
+    <div style="background:#0d1225;border:0.5px solid #2a3a5a;border-radius:10px;padding:14px;margin-bottom:14px">
+      <div style="font-size:12px;color:#4a9eff;margin-bottom:10px;font-weight:500">📦 랏 구성</div>
+      <div class="slider-wrap" style="margin-bottom:8px"><div class="slider-label"><span>기본 랏 <span style="color:#6b7a99">(증액 전)</span></span><span class="slider-val" id="cv-liq-lot1">1</span></div><input type="range" id="cs-liq-lot1" min="0.1" max="10" step="0.1" value="1" oninput="calcLiq()"/></div>
+      <div class="slider-wrap" style="margin-bottom:8px"><div class="slider-label"><span>증액 랏 <span style="color:#ffaa4a">(증액 이후)</span></span><span class="slider-val" id="cv-liq-lot2">2</span></div><input type="range" id="cs-liq-lot2" min="0.1" max="10" step="0.1" value="2" oninput="calcLiq()"/></div>
+      <div class="slider-wrap"><div class="slider-label"><span>증액 시작 번째</span><span class="slider-val" id="cv-liq-scale">5번째부터</span></div><input type="range" id="cs-liq-scale" min="1" max="50" step="1" value="5" oninput="calcLiq()"/></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+      <div class="card card-green" style="text-align:center"><div class="label">안전 구간</div><div id="liq-safe-n" style="font-size:22px;font-weight:700;color:#4aff9e;margin:6px 0">-</div><div id="liq-safe-loss" style="font-size:10px;color:#6b7a99"></div></div>
+      <div class="card card-red" style="text-align:center"><div class="label">청산 발생</div><div id="liq-danger-n" style="font-size:22px;font-weight:700;color:#ff4a4a;margin:6px 0">-</div><div id="liq-danger-drop" style="font-size:10px;color:#6b7a99"></div></div>
+      <div class="card" style="text-align:center;border-left:3px solid #ffaa4a"><div class="label">버팀 하락폭</div><div id="liq-survive-pt" style="font-size:22px;font-weight:700;color:#ffaa4a;margin:6px 0">-</div><div id="liq-survive-pct" style="font-size:10px;color:#6b7a99"></div></div>
+    </div>
+    <!-- 손익 미리보기 -->
+    <div class="card card-blue" style="margin-bottom:14px">
+      <div class="label" style="margin-bottom:8px">💰 수익실현 시 기대 수익 (1사이클)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="text-align:center">
+          <div class="label">기본랏 1회 수익</div>
+          <div id="liq-profit1" style="font-size:16px;font-weight:600;color:#4aff9e;margin-top:4px"></div>
+        </div>
+        <div style="text-align:center">
+          <div class="label">증액랏 1회 수익</div>
+          <div id="liq-profit2" style="font-size:16px;font-weight:600;color:#ffaa4a;margin-top:4px"></div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7a99;margin-bottom:6px"><span>자금 소진율</span><span id="liq-pct-txt">0%</span></div>
+      <div style="height:8px;background:#1e2a45;border-radius:4px;overflow:hidden"><div id="liq-progress" style="height:100%;background:linear-gradient(90deg,#4aff9e,#ffaa4a,#ff4a4a);border-radius:4px;transition:width 0.3s;width:0%"></div></div>
+    </div>
+    <div class="tbl">
+      <div class="tbl-head" style="grid-template-columns:36px 1fr 50px 1fr 1fr 1fr"><span class="label">#</span><span class="label">진입가</span><span class="label">랏</span><span class="label">이번손실</span><span class="label">누적손실</span><span class="label">잔여자금</span></div>
+      <div id="liq-table" style="max-height:280px;overflow-y:auto"></div>
+    </div>
+  </div>
+
+  <!-- ── 역산 계산기 ── -->
+  <div id="tab-rev" class="hidden">
+    <div style="font-size:13px;font-weight:500;margin-bottom:4px">🔍 역산 계산기</div>
+    <div class="label" style="margin-bottom:16px">현재가·목표가 입력 → 체결 번째 수·누적손실 계산</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div>
+        <div class="label" style="margin-bottom:5px">현재가 <span id="rev-price-unit" class="pip-badge"></span></div>
+        <input type="number" id="ni-rev-cur" value="20000" step="100" oninput="calcRev()" class="num-input"/>
+      </div>
+      <div>
+        <div class="label" style="margin-bottom:5px">하락 목표가</div>
+        <input type="number" id="ni-rev-tgt" value="19000" step="100" oninput="calcRev()" style="width:100%;padding:10px 12px;background:#141929;border:0.5px solid #ff4a4a;border-radius:8px;color:#ff4a4a;font-size:14px;font-weight:500;outline:none"/>
+      </div>
+    </div>
+    <div class="slider-wrap"><div class="slider-label"><span>보유 자금</span><span class="slider-val" id="cv-rev-cash">$120,000</span></div><input type="range" id="cs-rev-cash" min="10000" max="1000000" step="10000" value="120000" oninput="calcRev()"/></div>
+    <div class="slider-wrap"><div class="slider-label"><span>주문 간격 <span id="rev-gap-unit" class="pip-badge"></span></span><span class="slider-val" id="cv-rev-gap">50</span></div><input type="range" id="cs-rev-gap" min="1" max="500" step="1" value="50" oninput="calcRev()"/></div>
+    <div style="background:#0d1225;border:0.5px solid #2a3a5a;border-radius:10px;padding:14px;margin-bottom:14px">
+      <div style="font-size:12px;color:#4a9eff;margin-bottom:10px;font-weight:500">📦 랏 구성</div>
+      <div class="slider-wrap" style="margin-bottom:8px"><div class="slider-label"><span>기본 랏</span><span class="slider-val" id="cv-rev-lot1">1</span></div><input type="range" id="cs-rev-lot1" min="0.1" max="10" step="0.1" value="1" oninput="calcRev()"/></div>
+      <div class="slider-wrap" style="margin-bottom:8px"><div class="slider-label"><span>증액 랏</span><span class="slider-val" id="cv-rev-lot2">2</span></div><input type="range" id="cs-rev-lot2" min="0.1" max="10" step="0.1" value="2" oninput="calcRev()"/></div>
+      <div class="slider-wrap"><div class="slider-label"><span>증액 시작 번째</span><span class="slider-val" id="cv-rev-scale">5번째부터</span></div><input type="range" id="cs-rev-scale" min="1" max="50" step="1" value="5" oninput="calcRev()"/></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <div class="card card-blue" style="text-align:center"><div class="label">총 하락폭</div><div id="rev-drop-pt" style="font-size:20px;font-weight:700;margin:6px 0"></div><div id="rev-drop-pct" style="font-size:11px;color:#ffaa4a"></div></div>
+      <div class="card card-red" style="text-align:center"><div class="label">목표가 체결 번째</div><div id="rev-order-n" style="font-size:20px;font-weight:700;color:#ff4a4a;margin:6px 0"></div><div id="rev-order-price" style="font-size:11px;color:#6b7a99"></div></div>
+    </div>
+    <div style="background:#141929;border:0.5px solid #1e2a45;border-radius:10px;padding:14px;margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+        <div style="text-align:center"><div class="label">누적 손실</div><div id="rev-cum-loss" style="font-size:18px;font-weight:700;color:#ff4a4a;margin-top:5px"></div></div>
+        <div style="text-align:center"><div class="label">보유 자금</div><div id="rev-cash-disp" style="font-size:18px;font-weight:700;color:#4aff9e;margin-top:5px"></div></div>
+        <div style="text-align:center"><div class="label">잔여 자금</div><div id="rev-remaining" style="font-size:18px;font-weight:700;margin-top:5px"></div></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7a99;margin-bottom:6px"><span>자금 소진율</span><span id="rev-pct-txt"></span></div>
+      <div style="height:8px;background:#1e2a45;border-radius:4px;overflow:hidden"><div id="rev-progress" style="height:100%;background:linear-gradient(90deg,#4aff9e,#ffaa4a,#ff4a4a);border-radius:4px;transition:width 0.3s;width:0%"></div></div>
+      <div id="rev-status" style="margin-top:10px;font-size:12px;font-weight:500;text-align:center;padding:6px;border-radius:6px"></div>
+    </div>
+    <div class="tbl">
+      <div class="tbl-head" style="grid-template-columns:36px 1fr 50px 1fr 1fr"><span class="label">#</span><span class="label">진입가</span><span class="label">랏</span><span class="label">이번손실</span><span class="label">누적손실</span></div>
+      <div id="rev-table" style="max-height:260px;overflow-y:auto"></div>
+    </div>
+  </div>
+
+  <!-- ── 포지션 현황 ── -->
+  <div id="tab-pos" class="hidden">
+    <div style="font-size:13px;font-weight:500;margin-bottom:4px">📊 포지션 현황 & 반등 수익</div>
+    <div class="label" style="margin-bottom:16px">현재가 입력 시 체결 포지션 수 자동 계산</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div>
+        <div class="label" style="margin-bottom:5px">🔵 1번 체결가 <span id="pos-price-unit" class="pip-badge"></span></div>
+        <input type="number" id="ni-pos-start" value="20000" step="50" oninput="calcPos()" class="num-input"/>
+      </div>
+      <div>
+        <div class="label" style="margin-bottom:5px">🔴 현재가</div>
+        <input type="number" id="ni-pos-cur" value="19500" step="50" oninput="calcPos()" style="width:100%;padding:10px 12px;background:#141929;border:0.5px solid #ff4a4a;border-radius:8px;color:#ff4a4a;font-size:14px;font-weight:500;outline:none"/>
+      </div>
+    </div>
+    <div class="slider-wrap"><div class="slider-label"><span>간격 <span id="pos-gap-unit" class="pip-badge"></span></span><span class="slider-val" id="cv-pos-gap">50</span></div><input type="range" id="cs-pos-gap" min="1" max="500" step="1" value="50" oninput="calcPos()"/></div>
+    <div class="slider-wrap"><div class="slider-label"><span>랏 사이즈</span><span class="slider-val" id="cv-pos-lot">1</span></div><input type="range" id="cs-pos-lot" min="0.1" max="10" step="0.1" value="1" oninput="calcPos()"/></div>
+    <div class="slider-wrap"><div class="slider-label"><span>목표수익 <span id="pos-profit-unit" class="pip-badge"></span></span><span class="slider-val" id="cv-pos-profit">300</span></div><input type="range" id="cs-pos-profit" min="1" max="2000" step="1" value="300" oninput="calcPos()"/></div>
+
+    <div style="background:#0d1225;border:0.5px solid #2a3a5a;border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="font-size:12px;color:#4a9eff;font-weight:500;margin-bottom:12px">📌 현재 포지션 상태 (자동계산)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div style="background:#141929;border-radius:8px;padding:10px;text-align:center">
+          <div class="label">체결된 포지션</div>
+          <div id="pos-count" style="font-size:24px;font-weight:700;color:#e0e6f0;margin:4px 0"></div>
+          <div class="label">개</div>
+        </div>
+        <div style="background:#141929;border-radius:8px;padding:10px;text-align:center">
+          <div class="label">평균 단가</div>
+          <div id="pos-avg" style="font-size:24px;font-weight:700;color:#4a9eff;margin:4px 0"></div>
+          <div class="label" id="pos-avg-unit"></div>
+        </div>
+      </div>
+      <div style="background:#141929;border-radius:8px;padding:12px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span class="label">현재 평가 손익</span>
+          <span id="pos-unreal" style="font-size:18px;font-weight:700"></span>
+        </div>
+        <div style="height:6px;background:#1e2a45;border-radius:3px;overflow:hidden">
+          <div id="pos-pnl-bar" style="height:100%;border-radius:3px;transition:width 0.3s"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:#6b7a99;margin-top:5px">
+          <span>최저 진입가: <span id="pos-worst" style="color:#ff4a4a"></span></span>
+          <span>손익분기: <span id="pos-be" style="color:#4a9eff"></span></span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11px">
+        <div style="background:#141929;border-radius:6px;padding:8px;text-align:center"><div class="label">총 랏</div><div id="pos-total-lot" style="font-weight:600;margin-top:3px;color:#e0e6f0"></div></div>
+        <div style="background:#141929;border-radius:6px;padding:8px;text-align:center"><div class="label">하락폭</div><div id="pos-drop-pt" style="font-weight:600;margin-top:3px;color:#ffaa4a"></div></div>
+        <div style="background:#141929;border-radius:6px;padding:8px;text-align:center"><div class="label">하락률</div><div id="pos-drop-pct" style="font-weight:600;margin-top:3px;color:#ffaa4a"></div></div>
+      </div>
+    </div>
+
+    <div style="font-size:12px;color:#4aff9e;font-weight:500;margin-bottom:10px">
+      📈 반등하면 어떻게 될까?
+      <span class="label" style="font-size:10px;margin-left:6px">현재 손실 기준</span>
+    </div>
+    <div id="pos-scenarios"></div>
+    <div style="padding:12px;background:rgba(74,158,255,0.05);border:0.5px solid #2a3a5a;border-radius:8px;margin-top:4px">
+      <div class="label" style="margin-bottom:4px">💡 전체 수익실현 조건</div>
+      <div id="pos-full-rec" style="font-size:13px;font-weight:500;color:#4a9eff"></div>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => Math.round(n||0).toLocaleString();
+const fmtF = (n, d=2) => parseFloat((n||0).toFixed(d));
+const fmtD = n => (n>=0?'+':'-')+'$'+fmt(Math.abs(n));
+
+// ── 종목 설정 ─────────────────────────────────────────────────
+const ASSETS = {
+  NAS100: { name:'NAS100', label:'나스닥 100', pipVal:1.0,   unit:'pt',    unitStep:1,   defaultGap:50,  defaultPrice:20000, defaultProfit:300,  pipDesc:'1pt = $1.00/랏' },
+  XAUUSD: { name:'XAUUSD', label:'골드',       pipVal:3.80,  unit:'pt',    unitStep:0.01,defaultGap:5,   defaultPrice:4450,  defaultProfit:30,   pipDesc:'1pt = $3.80/랏' },
+  USDJPY: { name:'USDJPY', label:'달러/엔',    pipVal:6.7,   unit:'0.01pip',unitStep:0.01,defaultGap:50,  defaultPrice:155.00,defaultProfit:200,  pipDesc:'0.01pip = $6.70/랏' },
+  GBPJPY: { name:'GBPJPY', label:'파운드/엔',  pipVal:6.7,   unit:'0.01pip',unitStep:0.01,defaultGap:50,  defaultPrice:195.00,defaultProfit:200,  pipDesc:'0.01pip = $6.70/랏' },
+};
+
+let currentAsset = 'NAS100';
+let customPipVal = 1.0;
+let customDefaultGap = 50;
+
+function selectAsset(key) {
+  currentAsset = key;
+  const a = ASSETS[key];
+  customPipVal = a.pipVal;
+  customDefaultGap = a.defaultGap;
+
+  // 버튼 active
+  Object.keys(ASSETS).forEach(k => $('ab-'+k).classList.toggle('active', k===key));
+  $('asset-label').textContent = a.label + ' · ' + a.pipDesc;
+
+  // pip 패널 업데이트
+  $('pip-asset-name').textContent = a.name;
+  $('pip-unit-label').textContent = a.unit;
+  $('s-pip-val').value = a.pipVal;
+  $('v-pip-val').textContent = '$'+a.pipVal.toFixed(2);
+  $('s-default-gap').value = a.defaultGap;
+  $('v-default-gap').textContent = a.defaultGap;
+  updatePipExample();
+
+  // 유닛 뱃지 업데이트
+  ['liq','rev','pos'].forEach(t => {
+    const el = $(t+'-price-unit') || $(t.replace('liq','liq')+'-price-unit');
+    if($( t+'-price-unit')) $( t+'-price-unit').textContent = a.unit;
+    if($( t+'-gap-unit'))   $( t+'-gap-unit').textContent = a.unit;
+  });
+  if($('liq-price-unit')) $('liq-price-unit').textContent = a.unit;
+  if($('liq-gap-unit'))   $('liq-gap-unit').textContent = a.unit;
+  if($('rev-price-unit')) $('rev-price-unit').textContent = a.unit;
+  if($('rev-gap-unit'))   $('rev-gap-unit').textContent = a.unit;
+  if($('pos-price-unit')) $('pos-price-unit').textContent = a.unit;
+  if($('pos-gap-unit'))   $('pos-gap-unit').textContent = a.unit;
+  if($('pos-profit-unit'))$('pos-profit-unit').textContent = a.unit;
+
+  // 기본값 세팅
+  const gapInputs = ['cs-liq-gap','cs-rev-gap','cs-pos-gap'];
+  const gapVals   = ['cv-liq-gap','cv-rev-gap','cv-pos-gap'];
+  gapInputs.forEach((id,i) => { $(id).value = a.defaultGap; $(gapVals[i]).textContent = a.defaultGap; });
+
+  // 가격 기본값
+  if($('ni-liq-price')) $('ni-liq-price').value = a.defaultPrice;
+  if($('ni-rev-cur'))   $('ni-rev-cur').value = a.defaultPrice;
+  if($('ni-rev-tgt'))   $('ni-rev-tgt').value = +(a.defaultPrice * 0.95).toFixed(2);
+  if($('ni-pos-start')) $('ni-pos-start').value = a.defaultPrice;
+  if($('ni-pos-cur'))   $('ni-pos-cur').value = +(a.defaultPrice - a.defaultGap * 10).toFixed(2);
+
+  // 목표수익 기본값
+  if($('cs-pos-profit')) { $('cs-pos-profit').value = a.defaultProfit; $('cv-pos-profit').textContent = a.defaultProfit; }
+
+  // 아바타 단위
+  if($('pos-avg-unit')) $('pos-avg-unit').textContent = a.unit;
+
+  calcLiq(); calcRev(); calcPos();
 }
 
-// ── 계산기들 ───────────────────────────────────────
+function updatePipVal() {
+  customPipVal = parseFloat($('s-pip-val').value);
+  $('v-pip-val').textContent = '$'+customPipVal.toFixed(2);
+  updatePipExample();
+  calcLiq(); calcRev(); calcPos();
+}
+
+function updateDefaultGap() {
+  customDefaultGap = parseInt($('s-default-gap').value);
+  $('v-default-gap').textContent = customDefaultGap;
+  updatePipExample();
+}
+
+function updatePipExample() {
+  const a = ASSETS[currentAsset];
+  const profit1 = customDefaultGap * customPipVal * 1;
+  $('pip-calc-example').textContent = `간격 ${customDefaultGap}${a.unit} × $${customPipVal.toFixed(2)} × 1랏 = $${profit1.toFixed(2)}/회`;
+}
+
+// ── 탭 전환 ────────────────────────────────────────────────────
+function switchMain(tab) {
+  ['liq','rev','pos'].forEach(t => {
+    $('tab-'+t).classList.toggle('hidden', t!==tab);
+    $('main-tab-'+t).classList.toggle('active', t===tab);
+  });
+}
+
+// ── 청산 시뮬레이터 ────────────────────────────────────────────
 function calcLiq() {
-  const cash = parseFloat($('cs-liq-cash').value) || 120000;
-  const price = parseFloat($('ni-liq-price').value) || 29000;
-  const gap = parseFloat($('cs-liq-gap').value) || 50;
-  const lot1 = parseFloat($('cs-liq-lot1').value) || 1;
-  const lot2 = parseFloat($('cs-liq-lot2').value) || 2;
+  const cash    = parseFloat($('cs-liq-cash').value) || 120000;
+  const price   = parseFloat($('ni-liq-price').value) || 20000;
+  const gap     = parseFloat($('cs-liq-gap').value) || 50;
+  const lot1    = parseFloat($('cs-liq-lot1').value) || 1;
+  const lot2    = parseFloat($('cs-liq-lot2').value) || 2;
   const scaleAt = parseInt($('cs-liq-scale').value) || 5;
+  const pv      = customPipVal;
 
   $('cv-liq-cash').textContent = '$'+cash.toLocaleString();
-  $('cv-liq-gap').textContent = gap;
+  $('cv-liq-gap').textContent  = gap;
   $('cv-liq-lot1').textContent = lot1;
   $('cv-liq-lot2').textContent = lot2;
   $('cv-liq-scale').textContent = scaleAt+'번째부터';
+
+  // 1회 수익 미리보기
+  $('liq-profit1').textContent = '+$'+(gap * pv * lot1).toFixed(2);
+  $('liq-profit2').textContent = '+$'+(gap * pv * lot2).toFixed(2);
 
   const rows = [];
   let safeN = 0, dangerN = 0;
 
   for (let n = 1; n <= 300; n++) {
     const entryPrice = price - gap * n;
-
-    if (n === 1) {
-      rows.push({ n, entryPrice: Math.round(entryPrice), lot: lot1 < scaleAt ? lot1 : lot2, cumLoss: 0 });
-    } else {
-      let cumLoss = 0;
+    let cumLoss = 0;
+    if (n > 1) {
       for (let i = 1; i <= n; i++) {
         const ep_i = price - gap * i;
         const ep_n = price - gap * n;
-        const l_i = i >= scaleAt ? lot2 : lot1;
-        cumLoss += (ep_n - ep_i) * l_i;
+        const l_i  = i >= scaleAt ? lot2 : lot1;
+        cumLoss   += Math.abs((ep_n - ep_i) * l_i * pv);
       }
-      cumLoss = Math.abs(cumLoss);
-      const lot = n >= scaleAt ? lot2 : lot1;
-      rows.push({ n, entryPrice: Math.round(entryPrice), lot, cumLoss: Math.round(cumLoss) });
+    }
+    const lot = n >= scaleAt ? lot2 : lot1;
+    rows.push({ n, entryPrice: +entryPrice.toFixed(2), lot, cumLoss: Math.round(cumLoss) });
+    if (n > 1) {
       if (cumLoss < cash) safeN = n;
       if (cumLoss >= cash && dangerN === 0) dangerN = n;
     }
     if (dangerN > 0) break;
   }
 
-  const safeRow = rows.find(r => r.n === safeN);
-  const dangerRow = rows.find(r => r.n === dangerN) || rows[rows.length - 1];
-  const survivePoints = dangerN > 0 ? gap * (dangerN - 1) : gap * rows.length;
-  const survivePct = ((survivePoints / (price || 1)) * 100).toFixed(1);
-  const usedPct = dangerRow ? Math.min((dangerRow.cumLoss / cash * 100), 100) : 0;
+  const safeRow   = rows.find(r => r.n === safeN);
+  const dangerRow = rows.find(r => r.n === dangerN) || rows[rows.length-1];
+  const survivePoints = dangerN > 0 ? gap * (dangerN-1) : gap * rows.length;
+  const survivePct    = ((survivePoints / (price||1)) * 100).toFixed(1);
+  const usedPct       = dangerRow ? Math.min((dangerRow.cumLoss / cash * 100), 100) : 0;
 
-  $('liq-safe-n').textContent = safeN ? safeN+'번째' : '-';
-  $('liq-safe-loss').textContent = safeRow ? '-$'+fmt(safeRow.cumLoss) : '';
-  $('liq-danger-n').textContent = dangerN ? dangerN+'번째' : '안전✓';
-  $('liq-danger-drop').textContent = dangerN ? '하락 '+fmt(survivePoints)+'pt' : '';
-  $('liq-survive-pt').textContent = fmt(survivePoints)+'pt';
-  $('liq-survive-pct').textContent = survivePoints > 0 ? '-'+survivePct+'%' : '';
-  $('liq-pct-txt').textContent = usedPct.toFixed(1)+'%';
-  $('liq-progress').style.width = usedPct+'%';
+  $('liq-safe-n').textContent     = safeN ? safeN+'번째' : '-';
+  $('liq-safe-loss').textContent  = safeRow ? '-$'+fmt(safeRow.cumLoss) : '';
+  $('liq-danger-n').textContent   = dangerN ? dangerN+'번째' : '안전✓';
+  $('liq-danger-drop').textContent= dangerN ? '하락 '+fmt(survivePoints) : '';
+  $('liq-survive-pt').textContent = fmt(survivePoints);
+  $('liq-survive-pct').textContent= survivePoints > 0 ? '-'+survivePct+'%' : '';
+  $('liq-pct-txt').textContent    = usedPct.toFixed(1)+'%';
+  $('liq-progress').style.width   = usedPct+'%';
 
   $('liq-table').innerHTML = rows.map((r, i) => {
-    const prevCum = i > 0 ? rows[i-1].cumLoss : 0;
+    const prevCum  = i > 0 ? rows[i-1].cumLoss : 0;
     const thisLoss = r.cumLoss - prevCum;
-    const isLiq = r.n === dangerN;
-    const isScale = r.n >= scaleAt;
+    const isLiq    = r.n === dangerN;
+    const isScale  = r.n >= scaleAt;
+    const remaining= Math.max(0, cash - r.cumLoss);
     return `
-      <div class="tbl-row" style="grid-template-columns:36px 1fr 50px 1fr 1fr;background:${isLiq?'rgba(220,53,69,0.1)':i%2===0?'transparent':'#141929'}">
+      <div class="tbl-row" style="grid-template-columns:36px 1fr 50px 1fr 1fr 1fr;background:${isLiq?'rgba(220,53,69,0.1)':i%2===0?'transparent':'#141929'}">
         <span style="font-size:11px;color:${isLiq?'#ff4a4a':isScale?'#ffaa4a':'#6b7a99'}">${r.n}${isLiq?'🚨':''}</span>
-        <span style="font-size:11px">${fmt(r.entryPrice)}</span>
+        <span style="font-size:11px">${r.entryPrice}</span>
         <span style="font-size:11px;color:${isScale?'#ffaa4a':'#e0e6f0'}">${r.lot}</span>
         <span style="font-size:11px;color:#ff4a4a">-$${fmt(thisLoss)}</span>
         <span style="font-size:11px;color:${isLiq?'#ff4a4a':'#e0e6f0'}">-$${fmt(r.cumLoss)}</span>
-      </div>
-    `;
+        <span style="font-size:11px;color:${remaining<cash*0.3?'#ff4a4a':remaining<cash*0.6?'#ffaa4a':'#4aff9e'}">$${fmt(remaining)}</span>
+      </div>`;
   }).join('');
 }
 
+// ── 역산 계산기 ────────────────────────────────────────────────
 function calcRev() {
-  const cur = parseFloat($('ni-rev-cur').value) || 29000;
-  const tgt = parseFloat($('ni-rev-tgt').value) || 25000;
-  const cash = parseFloat($('cs-rev-cash').value);
-  const gap = parseFloat($('cs-rev-gap').value);
-  const lot1 = parseFloat($('cs-rev-lot1').value);
-  const lot2 = parseFloat($('cs-rev-lot2').value);
-  const scaleAt = parseInt($('cs-rev-scale').value);
+  const cur     = parseFloat($('ni-rev-cur').value)  || 20000;
+  const tgt     = parseFloat($('ni-rev-tgt').value)  || 19000;
+  const cash    = parseFloat($('cs-rev-cash').value) || 120000;
+  const gap     = parseFloat($('cs-rev-gap').value)  || 50;
+  const lot1    = parseFloat($('cs-rev-lot1').value) || 1;
+  const lot2    = parseFloat($('cs-rev-lot2').value) || 2;
+  const scaleAt = parseInt($('cs-rev-scale').value)  || 5;
+  const pv      = customPipVal;
 
-  $('cv-rev-cash').textContent = '$'+cash.toLocaleString();
-  $('cv-rev-gap').textContent = gap;
-  $('cv-rev-lot1').textContent = lot1;
-  $('cv-rev-lot2').textContent = lot2;
+  $('cv-rev-cash').textContent  = '$'+cash.toLocaleString();
+  $('cv-rev-gap').textContent   = gap;
+  $('cv-rev-lot1').textContent  = lot1;
+  $('cv-rev-lot2').textContent  = lot2;
   $('cv-rev-scale').textContent = scaleAt+'번째부터';
 
-  const drop = Math.max(0, cur - tgt);
-  const dropPct = ((drop / (cur||1)) * 100).toFixed(1);
-  $('rev-drop-pt').textContent = fmt(drop)+'pt';
+  const drop    = Math.max(0, cur - tgt);
+  const dropPct = ((drop / (cur||1)) * 100).toFixed(2);
+  $('rev-drop-pt').textContent  = drop.toFixed(2);
   $('rev-drop-pct').textContent = '-'+dropPct+'%';
 
-  // 목표가에 해당하는 주문 번째 계산
   const orderN = Math.ceil(drop / gap);
-  $('rev-order-n').textContent = orderN ? orderN+'번째' : '-';
-  $('rev-order-price').textContent = orderN ? '진입가 '+fmt(cur - gap*orderN) : '';
+  $('rev-order-n').textContent    = orderN ? orderN+'번째' : '-';
+  $('rev-order-price').textContent= orderN ? '진입가 '+(cur - gap*orderN).toFixed(2) : '';
 
-  // 목표가 도달 시 누적손실 계산 (1~orderN 포지션 평가손)
-  let cumLoss = 0;
   const rows = [];
   for (let n = 1; n <= orderN; n++) {
     const entryPrice = cur - gap * n;
-    const lot = n >= scaleAt ? lot2 : lot1;
-    // n번째 체결 시점 = 현재가가 entryPrice까지 하락
-    // 이미 체결된 1~n-1번 포지션들의 추가 손실
-    let thisLoss = 0;
-    for (let i = 1; i < n; i++) {
-      const l_i = i >= scaleAt ? lot2 : lot1;
-      thisLoss += gap * l_i; // 각 기존 포지션이 gap만큼 추가 하락
-    }
-    cumLoss += thisLoss + 0; // 첫체결은 손실없음
-    // 더 정확한 방법: n번째 체결 시 전체 평가손
     let totalEval = 0;
     for (let i = 1; i <= n; i++) {
       const ep_i = cur - gap * i;
-      const ep_n = cur - gap * n; // 현재가
-      const l_i = i >= scaleAt ? lot2 : lot1;
-      totalEval += (ep_n - ep_i) * l_i;
+      const ep_n = cur - gap * n;
+      const l_i  = i >= scaleAt ? lot2 : lot1;
+      totalEval += (ep_n - ep_i) * l_i * pv;
     }
-    const absCum = Math.abs(totalEval);
+    const absCum  = Math.abs(totalEval);
     const prevCum = rows.length > 0 ? rows[rows.length-1].cumLoss : 0;
-    rows.push({ n, entryPrice: Math.round(entryPrice), lot, cumLoss: Math.round(absCum), thisLoss: Math.round(absCum - prevCum) });
+    const lot     = n >= scaleAt ? lot2 : lot1;
+    rows.push({ n, entryPrice: +entryPrice.toFixed(2), lot, cumLoss: Math.round(absCum), thisLoss: Math.round(absCum - prevCum) });
   }
 
-  const finalCum = rows.length > 0 ? rows[rows.length-1].cumLoss : 0;
+  const finalCum  = rows.length > 0 ? rows[rows.length-1].cumLoss : 0;
   const remaining = cash - finalCum;
-  const usedPct = Math.min((finalCum / cash) * 100, 100);
-  const safe = finalCum < cash;
+  const usedPct   = Math.min((finalCum / cash) * 100, 100);
+  const safe      = finalCum < cash;
 
-  $('rev-cum-loss').textContent = '-$'+fmt(finalCum);
+  $('rev-cum-loss').textContent  = '-$'+fmt(finalCum);
   $('rev-cash-disp').textContent = '$'+fmt(cash);
   $('rev-remaining').textContent = '$'+fmt(Math.max(0, remaining));
   $('rev-remaining').style.color = remaining > 0 ? '#4aff9e' : '#ff4a4a';
-  $('rev-pct-txt').textContent = usedPct.toFixed(1)+'%';
-  $('rev-progress').style.width = usedPct+'%';
+  $('rev-pct-txt').textContent   = usedPct.toFixed(1)+'%';
+  $('rev-progress').style.width  = usedPct+'%';
 
-  const statusEl = $('rev-status');
+  const st = $('rev-status');
   if (safe) {
-    statusEl.textContent = '✅ 목표가 도달 시 청산 없이 버팀 가능 (잔여 $'+fmt(remaining)+')';
-    statusEl.style.background = 'rgba(29,158,117,0.15)';
-    statusEl.style.color = '#4aff9e';
+    st.textContent = '✅ 목표가 도달 시 청산 없이 버팀 (잔여 $'+fmt(remaining)+')';
+    st.style.background = 'rgba(29,158,117,0.15)';
+    st.style.color = '#4aff9e';
   } else {
-    statusEl.textContent = '🚨 목표가 도달 전 청산 발생! 자금 부족 $'+fmt(Math.abs(remaining));
-    statusEl.style.background = 'rgba(220,53,69,0.15)';
-    statusEl.style.color = '#ff4a4a';
+    st.textContent = '🚨 목표가 도달 전 청산 발생! 자금 부족 $'+fmt(Math.abs(remaining));
+    st.style.background = 'rgba(220,53,69,0.15)';
+    st.style.color = '#ff4a4a';
   }
 
   $('rev-table').innerHTML = rows.map((r, i) => {
     const isScale = r.n >= scaleAt;
-    const isLast = r.n === orderN;
+    const isLast  = r.n === orderN;
     return `
       <div class="tbl-row" style="grid-template-columns:36px 1fr 50px 1fr 1fr;background:${isLast?'rgba(74,158,255,0.08)':i%2===0?'transparent':'#141929'}">
         <span style="font-size:11px;color:${isScale?'#ffaa4a':'#6b7a99'}">${r.n}${isLast?'🎯':''}</span>
-        <span style="font-size:11px">${fmt(r.entryPrice)}</span>
+        <span style="font-size:11px">${r.entryPrice}</span>
         <span style="font-size:11px;color:${isScale?'#ffaa4a':'#e0e6f0'}">${r.lot}</span>
         <span style="font-size:11px;color:#ff4a4a">-$${fmt(r.thisLoss)}</span>
         <span style="font-size:11px;color:${r.cumLoss>=cash?'#ff4a4a':'#e0e6f0'}">-$${fmt(r.cumLoss)}</span>
-      </div>
-    `;
+      </div>`;
   }).join('');
 }
 
+// ── 포지션 현황 ─────────────────────────────────────────────────
 function calcPos() {
-  const start = parseFloat($('ni-pos-start').value) || 29000;
-  const cur = parseFloat($('ni-pos-cur').value) || 27500;
-  const gap = parseFloat($('cs-pos-gap').value) || 50;
-  const lot = parseFloat($('cs-pos-lot').value) || 1;
+  const start  = parseFloat($('ni-pos-start').value)  || 20000;
+  const cur    = parseFloat($('ni-pos-cur').value)    || 19500;
+  const gap    = parseFloat($('cs-pos-gap').value)    || 50;
+  const lot    = parseFloat($('cs-pos-lot').value)    || 1;
   const profit = parseFloat($('cs-pos-profit').value) || 300;
+  const pv     = customPipVal;
 
-  $('cv-pos-gap').textContent = gap;
-  $('cv-pos-lot').textContent = lot;
+  $('cv-pos-gap').textContent    = gap;
+  $('cv-pos-lot').textContent    = lot;
   $('cv-pos-profit').textContent = profit;
 
-  // 현재가 기준 자동 체결 수 계산
   const drop = Math.max(0, start - cur);
-  const n = Math.floor(drop / gap); // 현재가까지 내려온 체결 수
+  const n    = Math.floor(drop / gap);
 
   if (n === 0) {
-    $('pos-count').textContent = '0';
-    $('pos-avg').textContent = '-';
+    $('pos-count').textContent  = '0';
+    $('pos-avg').textContent    = '-';
     $('pos-unreal').textContent = '체결 없음';
     $('pos-unreal').style.color = '#6b7a99';
-    $('pos-scenarios').innerHTML = '<div class="label" style="text-align:center;padding:20px">현재가가 1번 체결가보다 낮아야 포지션이 생깁니다</div>';
+    $('pos-scenarios').innerHTML= '<div class="label" style="text-align:center;padding:20px">현재가가 1번 체결가보다 낮아야 포지션이 생깁니다</div>';
     return;
   }
 
-  // 진입가 목록: 1번 = start - gap, 2번 = start - gap*2 ...
-  const entries = Array.from({length: n}, (_, i) => start - gap * (i + 1));
-  const avg = entries.reduce((s, e) => s + e, 0) / entries.length;
-  const unreal = entries.reduce((s, e) => s + (cur - e) * lot, 0); // 음수 = 손실
-  const worst = entries[entries.length - 1]; // 가장 낮은 진입가
-  const totalLot = Math.round(n * lot * 10) / 10;
+  const entries   = Array.from({length:n}, (_,i) => +(start - gap*(i+1)).toFixed(4));
+  const avg       = entries.reduce((s,e)=>s+e, 0) / entries.length;
+  const unreal    = entries.reduce((s,e)=>s+(cur-e)*lot*pv, 0);
+  const worst     = entries[entries.length-1];
+  const totalLot  = Math.round(n * lot * 10) / 10;
 
-  // 현재 상태 표시
-  $('pos-count').textContent = n;
-  $('pos-avg').textContent = fmt(avg);
-  $('pos-unreal').textContent = fmtD(unreal);
-  $('pos-unreal').style.color = unreal >= 0 ? '#4aff9e' : '#ff4a4a';
-  $('pos-worst').textContent = fmt(worst);
-  $('pos-be').textContent = fmt(avg);
-  $('pos-total-lot').textContent = totalLot + ' lot';
-  $('pos-drop-pt').textContent = fmt(drop) + 'pt';
-  $('pos-drop-pct').textContent = '-' + ((drop / start) * 100).toFixed(1) + '%';
+  $('pos-count').textContent     = n;
+  $('pos-avg').textContent       = avg.toFixed(2);
+  $('pos-unreal').textContent    = fmtD(unreal);
+  $('pos-unreal').style.color    = unreal >= 0 ? '#4aff9e' : '#ff4a4a';
+  $('pos-worst').textContent     = worst.toFixed(2);
+  $('pos-be').textContent        = avg.toFixed(2);
+  $('pos-total-lot').textContent = totalLot+' lot';
+  $('pos-drop-pt').textContent   = drop.toFixed(2);
+  $('pos-drop-pct').textContent  = '-'+((drop/start)*100).toFixed(2)+'%';
 
-  // 손익 진행바 (0=최대손실, 100=손익분기)
-  const maxLoss = Math.abs(entries.reduce((s, e) => s + (worst - e) * lot, 0));
-  const pnlPct = maxLoss > 0 ? Math.max(2, Math.min(98, (1 - Math.abs(unreal) / maxLoss) * 100)) : 50;
-  $('pos-pnl-bar').style.width = (unreal >= 0 ? 100 : pnlPct) + '%';
-  $('pos-pnl-bar').style.background = unreal >= 0 ? '#4aff9e' : '#ff4a4a';
+  const maxLoss = Math.abs(entries.reduce((s,e)=>s+(worst-e)*lot*pv, 0));
+  const pnlPct  = maxLoss>0 ? Math.max(2, Math.min(98, (1-Math.abs(unreal)/maxLoss)*100)) : 50;
+  $('pos-pnl-bar').style.width      = (unreal>=0?100:pnlPct)+'%';
+  $('pos-pnl-bar').style.background = unreal>=0?'#4aff9e':'#ff4a4a';
 
-  // ── 반등 시나리오 ──────────────────────────────────
-  // 시나리오: 현재가에서 X pt 오르면 어떻게 되나?
-  // 각 포지션은 진입가 + profit pt 도달 시 수익실현
-
+  // 반등 시나리오
   const makeScenario = (targetPrice, label) => {
     if (targetPrice <= cur) return null;
-    const risePt = Math.round(targetPrice - cur);
-
-    // 수익실현된 포지션: targetPrice >= 진입가 + profit
+    const risePt = targetPrice - cur;
     const closed = entries.filter(e => targetPrice >= e + profit);
-    // 아직 보유중인 포지션
-    const held = entries.filter(e => targetPrice < e + profit);
-
-    const realizedProfit = closed.length * profit * lot;          // 확정 수익
-    const heldEval = held.reduce((s, e) => s + (targetPrice - e) * lot, 0); // 평가손익
-    const totalPnL = realizedProfit + heldEval;                   // 합산
-
-    // 현재 손실 대비 개선액
-    const improvement = totalPnL - unreal;
-
+    const held   = entries.filter(e => targetPrice < e + profit);
+    const realizedProfit = closed.length * profit * lot * pv;
+    const heldEval       = held.reduce((s,e)=>(s+(targetPrice-e)*lot*pv), 0);
+    const totalPnL       = realizedProfit + heldEval;
+    const improvement    = totalPnL - unreal;
     return { label, targetPrice, risePt, closed, held, realizedProfit, heldEval, totalPnL, improvement };
   };
 
-  // 의미있는 반등 포인트들
+  const needAvgRise = avg - cur;
   const scenarioTargets = [
-    { pt: profit, label: `+${profit}pt (목표수익 1개 도달)` },
-    { pt: Math.round(drop * 0.25), label: `하락폭의 25% 반등` },
-    { pt: Math.round(drop * 0.5), label: `하락폭의 50% 반등` },
-    { pt: Math.round(drop * 0.75), label: `하락폭의 75% 반등` },
-    { pt: Math.round(avg - cur), label: `평균단가 도달 (손익분기)` },
-    { pt: drop, label: `원점 회복 (${fmt(start)})` },
+    { pt: profit,                    label:`+${profit} (목표수익 1개)` },
+    { pt: Math.round(drop*0.25),     label:`하락폭 25% 반등` },
+    { pt: Math.round(drop*0.5),      label:`하락폭 50% 반등` },
+    { pt: Math.round(drop*0.75),     label:`하락폭 75% 반등` },
+    { pt: Math.round(needAvgRise),   label:`평균단가 도달 (손익분기)` },
+    { pt: Math.round(drop),          label:`원점 회복 (${start})` },
   ].filter(t => t.pt > 0);
 
-  // 중복 제거 + 정렬
   const seen = new Set();
-  const uniqueTargets = scenarioTargets.filter(t => {
-    const k = t.pt;
-    if (seen.has(k)) return false;
-    seen.add(k);
-    return true;
-  }).sort((a, b) => a.pt - b.pt);
+  const unique = scenarioTargets.filter(t => { if(seen.has(t.pt)) return false; seen.add(t.pt); return true; }).sort((a,b)=>a.pt-b.pt);
 
-  $('pos-scenarios').innerHTML = uniqueTargets.map(t => {
+  $('pos-scenarios').innerHTML = unique.map(t => {
     const s = makeScenario(cur + t.pt, t.label);
     if (!s) return '';
-    const isProfit = s.totalPnL >= 0;
+    const isProfit    = s.totalPnL >= 0;
     const borderColor = isProfit ? '#1D9E75' : '#2a3a5a';
-    const pnlColor = isProfit ? '#4aff9e' : '#ff4a4a';
-
+    const pnlColor    = isProfit ? '#4aff9e' : '#ff4a4a';
     return `
       <div style="background:#141929;border-left:3px solid ${borderColor};border-radius:8px;margin-bottom:8px;overflow:hidden">
-        <!-- 헤더 -->
         <div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center">
           <div>
             <div style="font-size:10px;color:#6b7a99;margin-bottom:2px">${s.label}</div>
-            <div style="font-size:14px;font-weight:600">
-              ${fmt(s.targetPrice)}
-              <span style="font-size:11px;color:#4a9eff;font-weight:400"> (+${fmt(s.risePt)}pt)</span>
-            </div>
+            <div style="font-size:14px;font-weight:600">${s.targetPrice.toFixed(2)}<span style="font-size:11px;color:#4a9eff;font-weight:400"> (+${s.risePt.toFixed(2)})</span></div>
           </div>
           <div style="text-align:right">
             <div style="font-size:10px;color:#6b7a99">평가 합산</div>
             <div style="font-size:18px;font-weight:700;color:${pnlColor}">${fmtD(s.totalPnL)}</div>
           </div>
         </div>
-        <!-- 상세 3칸 -->
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-top:0.5px solid #1e2a45">
           <div style="padding:8px;text-align:center;border-right:0.5px solid #1e2a45">
             <div style="font-size:10px;color:#6b7a99;margin-bottom:3px">✅ 수익실현</div>
             <div style="font-size:13px;font-weight:600;color:#4aff9e">${s.closed.length}개</div>
-            <div style="font-size:11px;color:#4aff9e">+$${fmt(s.realizedProfit)}</div>
+            <div style="font-size:11px;color:#4aff9e">+$${fmtF(s.realizedProfit,2)}</div>
           </div>
           <div style="padding:8px;text-align:center;border-right:0.5px solid #1e2a45">
             <div style="font-size:10px;color:#6b7a99;margin-bottom:3px">📌 보유중</div>
@@ -979,30 +634,16 @@ function calcPos() {
             <div style="font-size:11px;color:#6b7a99">손익 개선</div>
           </div>
         </div>
-      </div>
-    `;
+      </div>`;
   }).join('');
 
-  // 전체 청산 조건
-  const needRise = (start - worst) + profit; // 최저 포지션이 +profit 되려면
-  const fullPrice = cur + needRise;
-  $('pos-full-rec').textContent =
-    `현재가(${fmt(cur)})에서 +${fmt(needRise)}pt 상승 → ${fmt(fullPrice)} 도달 시 모든 ${n}개 포지션 수익실현 완료`;
+  const needRise = (start - worst) + profit;
+  const fullPrice = +(cur + needRise).toFixed(2);
+  $('pos-full-rec').textContent = `현재가(${cur})에서 +${needRise.toFixed(2)} 상승 → ${fullPrice} 도달 시 모든 ${n}개 포지션 수익실현`;
 }
 
-// ── 초기 실행 ──────────────────────────────────────
-calcLiq(); calcRev(); calcPos();
-
-// ── PWA 서비스 워커 ────────────────────────────────
-if ('serviceWorker' in navigator) {
-  const sw = `
-    const C='grid-v1';
-    self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll(['/','index.html']).catch(()=>{}))));
-    self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>caches.match('index.html')))));
-  `;
-  const blob = new Blob([sw], {type:'application/javascript'});
-  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
-}
+// ── 초기화 ──────────────────────────────────────────────────────
+selectAsset('NAS100');
 </script>
 </body>
 </html>
