@@ -84,7 +84,7 @@ input[type=number]{-moz-appearance:textfield}
   <!-- 종목 선택 -->
   <div class="asset-grid">
     <button class="asset-btn active" onclick="selectAsset('NAS100')" id="ab-NAS100"><div class="aname">NAS100</div><div class="ameta">나스닥 · $1.00/pt</div></button>
-    <button class="asset-btn" onclick="selectAsset('XAUUSD')" id="ab-XAUUSD"><div class="aname">XAUUSD</div><div class="ameta">골드 · $3.80/pt</div></button>
+    <button class="asset-btn" onclick="selectAsset('XAUUSD')" id="ab-XAUUSD"><div class="aname">XAUUSD</div><div class="ameta">골드 · $1.00/0.01pt</div></button>
     <button class="asset-btn" onclick="selectAsset('USDJPY')" id="ab-USDJPY"><div class="aname">USD/JPY</div><div class="ameta">달러엔 · $6.70/0.01pip</div></button>
     <button class="asset-btn" onclick="selectAsset('GBPJPY')" id="ab-GBPJPY"><div class="aname">GBP/JPY</div><div class="ameta">파운드엔 · $6.70/0.01pip</div></button>
   </div>
@@ -92,18 +92,9 @@ input[type=number]{-moz-appearance:textfield}
   <!-- 커스텀 설정 -->
   <div class="custom-panel">
     <div style="font-size:12px;color:#4a9eff;font-weight:500;margin-bottom:12px">⚙️ 종목 설정 — <span id="pip-asset-name" style="color:#e0e6f0"></span></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div class="field" style="margin-bottom:0">
-        <div class="field-label">1랏 × 1단위 ($)</div>
-        <input type="number" class="ni" id="ni-pip-val" step="0.01" min="0.01" value="1" oninput="updatePipVal()"/>
-      </div>
-      <div class="field" style="margin-bottom:0">
-        <div class="field-label">기본 간격 <span id="pip-unit-badge" class="pip-badge"></span></div>
-        <input type="number" class="ni" id="ni-default-gap" step="1" min="1" value="50" oninput="updateDefaultGap()"/>
-      </div>
-    </div>
-    <div style="margin-top:10px;padding:9px 11px;background:#141929;border-radius:8px;font-size:11px;color:#6b7a99">
-      💡 <span id="pip-calc-example" style="color:#4aff9e"></span>
+    <div class="field" style="margin-bottom:0">
+      <div class="field-label">1랏 × 1단위 ($)</div>
+      <input type="number" class="ni" id="ni-pip-val" step="0.01" min="0.01" value="1" oninput="updatePipVal()"/>
     </div>
   </div>
 
@@ -145,6 +136,7 @@ input[type=number]{-moz-appearance:textfield}
         <div class="rc-label">안전 구간</div>
         <div class="rc-big" id="liq-safe-n" style="color:#4aff9e">-</div>
         <div class="rc-sub" id="liq-safe-loss"></div>
+        <div class="rc-sub" id="liq-safe-price" style="color:#4a9eff;margin-top:2px"></div>
       </div>
       <div class="res-card" style="border-left:3px solid #ff4a4a">
         <div class="rc-label">청산 발생</div>
@@ -156,15 +148,6 @@ input[type=number]{-moz-appearance:textfield}
         <div class="rc-big" id="liq-survive-val" style="color:#ffaa4a">-</div>
         <div class="rc-unit" id="liq-survive-unit"></div>
         <div class="rc-sub" id="liq-survive-pct"></div>
-      </div>
-    </div>
-
-    <!-- 1회 수익 -->
-    <div style="background:#141929;border:0.5px solid #1e2a45;border-left:3px solid #4a9eff;border-radius:8px;padding:12px 14px;margin-bottom:14px">
-      <div class="label" style="margin-bottom:8px">💰 1회 수익실현 금액 (간격 × pip값 × 랏)</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div style="text-align:center"><div class="label">기본랏</div><div id="liq-profit1" style="font-size:17px;font-weight:600;color:#4aff9e;margin-top:4px"></div></div>
-        <div style="text-align:center"><div class="label">증액랏</div><div id="liq-profit2" style="font-size:17px;font-weight:600;color:#ffaa4a;margin-top:4px"></div></div>
       </div>
     </div>
 
@@ -325,7 +308,7 @@ const fmtD = n  => (n>=0?'+$':'-$') + fmt(Math.abs(n));
 
 const ASSETS = {
   NAS100: { label:'나스닥 100', pipVal:1.00,  unit:'pt',      defGap:50,  defPrice:20000, defProfit:300  },
-  XAUUSD: { label:'골드',       pipVal:3.80,  unit:'pt',      defGap:5,   defPrice:4450,  defProfit:30   },
+  XAUUSD: { label:'골드',       pipVal:1.00,  unit:'0.01pt',  defGap:50,  defPrice:445000,defProfit:3000 },
   USDJPY: { label:'달러/엔',    pipVal:6.70,  unit:'0.01pip', defGap:50,  defPrice:155.00,defProfit:200  },
   GBPJPY: { label:'파운드/엔',  pipVal:6.70,  unit:'0.01pip', defGap:50,  defPrice:195.00,defProfit:200  },
 };
@@ -342,9 +325,8 @@ function selectAsset(key) {
   $('asset-label').textContent   = a.label + ' · $' + a.pipVal.toFixed(2) + '/' + a.unit;
   $('pip-asset-name').textContent= key;
   $('ni-pip-val').value          = a.pipVal;
-  $('ni-default-gap').value      = a.defGap;
 
-  ['pip-unit-badge','liq-gu','rev-gu','pos-gu','pos-pru'].forEach(id => { if($(id)) $(id).textContent = a.unit; });
+  ['liq-gu','rev-gu','pos-gu','pos-pru'].forEach(id => { if($(id)) $(id).textContent = a.unit; });
   ['liq-pu','rev-pu','pos-pu'].forEach(id => { if($(id)) $(id).textContent = a.unit; });
   if($('pos-avg-unit')) $('pos-avg-unit').textContent = a.unit;
 
@@ -366,13 +348,7 @@ function updatePipVal() {
   PV = parseFloat($('ni-pip-val').value) || 1;
   ASSETS[curKey].pipVal = PV;
   $('asset-label').textContent = ASSETS[curKey].label + ' · $' + PV.toFixed(2) + '/' + ASSETS[curKey].unit;
-  updatePipExample(); calcLiq(); calcRev(); calcPos();
-}
-function updateDefaultGap() { updatePipExample(); }
-function updatePipExample() {
-  const gap    = parseFloat($('ni-default-gap').value) || 50;
-  const profit = gap * PV;
-  $('pip-calc-example').textContent = `간격 ${gap} × $${PV.toFixed(2)} × 1랏 = $${profit.toFixed(2)} / 1회 수익실현`;
+  calcLiq(); calcRev(); calcPos();
 }
 
 function switchMain(tab) {
@@ -391,9 +367,6 @@ function calcLiq() {
   const lot2    = parseFloat($('ni-liq-lot2').value)  || 2;
   const scaleAt = parseInt($('ni-liq-scale').value)   || 5;
   const a       = ASSETS[curKey];
-
-  $('liq-profit1').textContent = '+$'+(gap*PV*lot1).toFixed(2);
-  $('liq-profit2').textContent = '+$'+(gap*PV*lot2).toFixed(2);
 
   const rows = []; let safeN=0, dangerN=0;
   for (let n=1; n<=500; n++) {
@@ -422,6 +395,7 @@ function calcLiq() {
 
   $('liq-safe-n').textContent      = safeN ? safeN+'번째' : '-';
   $('liq-safe-loss').textContent   = safeRow ? '-$'+fmt(safeRow.cumLoss) : '';
+  $('liq-safe-price').textContent  = safeRow ? '진입가 '+safeRow.ep : '';
   $('liq-danger-n').textContent    = dangerN ? dangerN+'번째' : '안전 ✓';
   $('liq-danger-drop').textContent = dangerN ? fmt(survivePts)+' '+a.unit+' 하락' : '';
   $('liq-survive-val').textContent = fmt(survivePts);
