@@ -406,15 +406,20 @@ function switchMain(tab) {
 }
 
 // ─── 공통: 누적손실 계산 ──────────────────────────────────────
-// gapReal: 실제 가격 변동 단위 (gap × pipScale)
+// gapReal: 실제 가격 변동 (gap × pipScale)
+// PV: 1단위당 달러/랏 (외환: 0.01pip당 $6.7, 나스닥: 1pt당 $1)
+// pipScale: 단위→가격 배율 (외환 0.01, 나머지 1)
 function calcCumLoss(n, entryBase, gapReal, lot1, lot2, scaleAt) {
   if (n < 2) return 0;
   let loss = 0;
+  const ps       = ASSETS[CUR].pipScale;
   const priceAtN = entryBase - gapReal * n;
   for (let i = 1; i <= n; i++) {
-    const ep_i = entryBase - gapReal * i;
-    const l_i  = i >= scaleAt ? lot2 : lot1;
-    loss += (priceAtN - ep_i) * l_i * PV;
+    const ep_i      = entryBase - gapReal * i;
+    const l_i       = i >= scaleAt ? lot2 : lot1;
+    const priceDiff = priceAtN - ep_i;       // 실제 가격 차이
+    const units     = priceDiff / ps;        // 단위수로 변환 (외환: /0.01 = ×100)
+    loss += units * l_i * PV;
   }
   return Math.abs(loss);
 }
@@ -588,7 +593,7 @@ function calcPos() {
 
   const entries = Array.from({length:n}, (_,i) => +(start - gapReal*(i+1)).toFixed(5));
   const avg     = entries.reduce((s,e)=>s+e,0) / n;
-  const unreal  = entries.reduce((s,e)=>s+(curP-e)*lot*PV, 0);
+  const unreal  = entries.reduce((s,e)=>s+((curP-e)/ps)*lot*PV, 0);
   const worst   = entries[n-1];
 
   $('pos-count').textContent     = n;
@@ -602,7 +607,7 @@ function calcPos() {
   $('pos-drop-pt').textContent   = drop.toFixed(3)+' '+a.unit;
   $('pos-drop-pct').textContent  = start ? '-'+((drop/start)*100).toFixed(2)+'%' : '';
 
-  const maxLoss = entries.reduce((s,e)=>s+Math.abs((worst-e)*lot*PV), 0);
+  const maxLoss = entries.reduce((s,e)=>s+Math.abs(((worst-e)/ps)*lot*PV), 0);
   const pnlPct  = maxLoss>0 ? Math.max(2, Math.min(98, (1-Math.abs(unreal)/maxLoss)*100)) : 50;
   $('pos-pnl-bar').style.width      = (unreal>=0?100:pnlPct)+'%';
   $('pos-pnl-bar').style.background = unreal>=0 ? '#4aff9e' : '#ff4a4a';
@@ -611,8 +616,8 @@ function calcPos() {
     if (tp <= curP) return null;
     const closed = entries.filter(e => tp >= e + profitReal);
     const held   = entries.filter(e => tp <  e + profitReal);
-    const realP  = closed.length * profitReal * lot * PV;
-    const heldE  = held.reduce((s,e)=>s+(tp-e)*lot*PV, 0);
+    const realP  = closed.length * (profitReal/ps) * lot * PV;
+    const heldE  = held.reduce((s,e)=>s+((tp-e)/ps)*lot*PV, 0);
     const total  = realP + heldE;
     return { label, tp, rise:tp-curP, closed, held, realP, heldE, total, improve:total-unreal };
   };
