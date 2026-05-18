@@ -341,8 +341,8 @@ const fmtD = n  => (n>=0?'+$':'-$') + fmt(Math.abs(n));
 const ASSETS = {
   NAS100: { name:'나스닥 100', pipVal:1.00,  unit:'pt',      pipScale:1,    defGap:50,  defPrice:20000,  defProfit:300 },
   XAUUSD: { name:'골드',       pipVal:100.00,unit:'pt',      pipScale:1,    defGap:5,   defPrice:4450,   defProfit:30  },
-  USDJPY: { name:'USD/JPY',    pipVal:6.70,  unit:'0.01pip', pipScale:0.01, defGap:50,  defPrice:155.00, defProfit:200 },
-  GBPJPY: { name:'GBP/JPY',    pipVal:6.70,  unit:'0.01pip', pipScale:0.01, defGap:50,  defPrice:195.00, defProfit:200 },
+  USDJPY: { name:'USD/JPY',    pipVal:0.67,  unit:'0.01pip', pipScale:0.01, defGap:50,  defPrice:155.00, defProfit:200 },
+  GBPJPY: { name:'GBP/JPY',    pipVal:0.67,  unit:'0.01pip', pipScale:0.01, defGap:50,  defPrice:195.00, defProfit:200 },
 };
 // pipScale: 입력 간격을 실제 가격 변동으로 변환 (USDJPY 50 입력 → 0.50 변동)
 
