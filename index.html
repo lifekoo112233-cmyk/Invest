@@ -101,14 +101,13 @@ input[type=number]{-moz-appearance:textfield}
   <!-- 종목 설정 패널 -->
   <div class="setting-panel">
     <div class="setting-panel-title">⚙️ 종목 설정 — <span id="sp-name" style="color:#e0e6f0"></span></div>
-    <div class="setting-row">
-      <span class="setting-key">단위</span>
-      <span class="setting-val" id="sp-unit"></span>
-    </div>
-    <div class="setting-row">
-      <span class="setting-key">1랏 × 1단위 ($) <span style="font-size:10px;color:#6b7a99">수정가능</span></span>
-      <input type="number" class="ni" id="ni-pip-val" step="0.01" min="0.01" value="1"
-             oninput="updatePipVal()" style="width:100px;padding:7px 10px;font-size:14px"/>
+    <div class="field" style="margin-bottom:0">
+      <div class="fl" id="sp-unit-label"></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:18px;font-weight:600;color:#6b7a99">$</span>
+        <input type="number" class="ni" id="ni-pip-val" step="0.01" min="0.01" value="1"
+               oninput="updatePipVal()" style="flex:1;padding:11px 12px;font-size:15px"/>
+      </div>
     </div>
   </div>
 
@@ -335,15 +334,13 @@ const fmtF = (n,d) => Number((n||0).toFixed(d||2));
 const fmtD = n  => (n>=0?'+$':'-$') + fmt(Math.abs(n));
 
 // ─── 종목 정의 ────────────────────────────────────────────────
-// pipVal: 실제 가격 1.00 움직임당 달러/랏
-// pipScale: 입력 간격 → 실제 가격 변동 배율
+// pipVal: 1랏 × 1단위당 달러 (표시값 = 계산값으로 통일)
 const ASSETS = {
-  NAS100: { name:'나스닥 100', pipVal:1.00,  unit:'pt',      pipScale:1,    defGap:50,  defPrice:20000,  defProfit:300 },
+  NAS100: { name:'나스닥 100', pipVal:1.00, unit:'pt',      pipScale:1,    defGap:50,  defPrice:20000,  defProfit:300 },
   XAUUSD: { name:'골드',       pipVal:100.00,unit:'pt',      pipScale:1,    defGap:5,   defPrice:4450,   defProfit:30  },
-  USDJPY: { name:'USD/JPY',    pipVal:67.00, unit:'0.01pip', pipScale:0.01, defGap:50,  defPrice:155.00, defProfit:200 },
-  GBPJPY: { name:'GBP/JPY',    pipVal:67.00, unit:'0.01pip', pipScale:0.01, defGap:50,  defPrice:195.00, defProfit:200 },
+  USDJPY: { name:'USD/JPY',    pipVal:6.70, unit:'0.01pip', pipScale:0.01, defGap:50,  defPrice:155.00, defProfit:200 },
+  GBPJPY: { name:'GBP/JPY',    pipVal:6.70, unit:'0.01pip', pipScale:0.01, defGap:50,  defPrice:195.00, defProfit:200 },
 };
-// USDJPY: 간격 50 입력 → 실제 0.50 움직임 → 0.50 × $67 × 랏 = 손익
 
 let CUR = 'NAS100';   // 현재 종목 키
 let PV  = 1.00;       // 현재 pip 달러값 (수정 가능)
@@ -362,10 +359,15 @@ function selectAsset(key) {
 
   // 설정 패널
   $('sp-name').textContent = a.name;
-  $('sp-unit').textContent = `1단위 = ${a.unit}`;
-  // 외환은 내부 pipVal이 1.00당 기준이므로, 표시는 0.01pip당으로 변환
-  const displayPV = a.pipScale === 0.01 ? +(a.pipVal * 0.01).toFixed(4) : a.pipVal;
-  $('ni-pip-val').value = displayPV;
+  // 종목별 레이블
+  const labelMap = {
+    NAS100: '1랏 (1pt) 당',
+    XAUUSD: '1랏 (1pt) 당',
+    USDJPY: '1랏 (0.01pip) 당',
+    GBPJPY: '1랏 (0.01pip) 당',
+  };
+  $('sp-unit-label').textContent = labelMap[key] + ' — 수정가능';
+  $('ni-pip-val').value = a.pipVal;
 
   // 단위 뱃지
   ['liq-pu','liq-gu','rev-pu','rev-gu','pos-pu','pos-gu','pos-pru'].forEach(id => {
@@ -390,10 +392,8 @@ function selectAsset(key) {
 function updatePipVal() {
   const v = parseFloat($('ni-pip-val').value);
   if (!v || v <= 0) return;
-  const ps = ASSETS[CUR].pipScale;
-  // 외환: 사용자가 0.01pip당 값 입력 → 내부는 1.00당으로 변환
-  PV = ps === 0.01 ? v / ps : v;
-  ASSETS[CUR].pipVal = PV;
+  PV = v;
+  ASSETS[CUR].pipVal = v;
   calcLiq(); calcRev(); calcPos();
 }
 
