@@ -839,7 +839,8 @@ function generateIcon() {
   $('pwa-icon-link').href = url;
 }
 
-// ─── URL 기반 저장/복원 ───────────────────────────────────────
+// ─── localStorage 저장/복원 ───────────────────────────────────
+const SAVE_KEY = 'gt-v1';
 const SAVE_IDS = [
   'ni-pip-val',
   'liq-cash','liq-price','liq-gap','liq-lot1','liq-lot2','liq-scale',
@@ -847,65 +848,51 @@ const SAVE_IDS = [
   'pos-start','pos-cur','pos-gap','pos-lot','pos-profit',
 ];
 
-function saveToClipboard() {
-  const data = { a: CUR };
-  SAVE_IDS.forEach(id => {
-    const el = $(id);
-    if (el) data[id] = el.value;
-  });
-  const encoded = btoa(encodeURIComponent(JSON.stringify(data)));
-  const url = location.href.split('?')[0].split('#')[0] + '?d=' + encoded;
-
-  // 클립보드 복사
-  navigator.clipboard.writeText(url).then(() => {
-    showToast('📋 URL 복사됨! 북마크하거나 저장하세요');
-  }).catch(() => {
-    // 클립보드 실패 시 프롬프트로 표시
-    prompt('아래 URL을 복사해서 북마크하세요:', url);
-  });
+function saveSettings() {
+  const data = { asset: CUR };
+  SAVE_IDS.forEach(id => { const el=$(id); if(el) data[id]=el.value; });
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch(e){}
 }
 
-function loadFromURL() {
+function loadSettings() {
   try {
-    const params = new URLSearchParams(location.search);
-    const encoded = params.get('d');
-    if (!encoded) return false;
-    const data = JSON.parse(decodeURIComponent(atob(encoded)));
-
-    const asset = data.a || 'NAS100';
-    selectAsset(asset);
-
-    SAVE_IDS.forEach(id => {
-      if (data[id] !== undefined && $(id)) $(id).value = data[id];
-    });
-
-    if (data['ni-pip-val']) {
-      PV = parseFloat(data['ni-pip-val']) || PV;
-      ASSETS[asset].pipVal = PV;
-    }
-
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    selectAsset(data.asset || 'NAS100');
+    SAVE_IDS.forEach(id => { if(data[id]!==undefined && $(id)) $(id).value=data[id]; });
+    if (data['ni-pip-val']) { PV=parseFloat(data['ni-pip-val'])||PV; ASSETS[CUR].pipVal=PV; }
     calcLiq(); calcRev(); calcPos();
     return true;
   } catch(e) { return false; }
 }
 
+function saveToClipboard() {
+  saveSettings();
+  showToast('✅ 저장 완료! 다음에 열어도 유지돼요');
+}
+
 function showToast(msg) {
-  let t = $('gt-toast');
-  if (!t) {
-    t = document.createElement('div');
-    t.id = 'gt-toast';
-    t.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#1D9E75;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:999;transition:opacity 0.3s;white-space:nowrap';
+  let t=$('gt-toast');
+  if(!t){
+    t=document.createElement('div');
+    t.id='gt-toast';
+    t.style.cssText='position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#1D9E75;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:999;transition:opacity 0.3s;white-space:nowrap';
     document.body.appendChild(t);
   }
-  t.textContent = msg;
-  t.style.opacity = '1';
+  t.textContent=msg; t.style.opacity='1';
   clearTimeout(t._timer);
-  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2500);
+  t._timer=setTimeout(()=>{ t.style.opacity='0'; },2500);
+}
+
+// 입력할 때마다 자동저장
+function bindAutoSave() {
+  SAVE_IDS.forEach(id => { const el=$(id); if(el) el.addEventListener('input', saveSettings); });
 }
 
 // ─── 초기화 ──────────────────────────────────────────────────
 generateIcon();
-const restored = loadFromURL();
+const restored = loadSettings();
 if (!restored) selectAsset('NAS100');
 bindAutoSave();
 
