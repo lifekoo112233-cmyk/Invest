@@ -497,6 +497,7 @@ function selectAsset(key) {
   $('pos-profit').value = a.defProfit;
 
   calcLiq(); calcRev(); calcPos();
+  saveSettings();
 }
 
 function updatePipVal() {
@@ -836,9 +837,68 @@ function generateIcon() {
   $('pwa-icon-link').href = url;
 }
 
+// ─── localStorage 저장/불러오기 ──────────────────────────────
+const SAVE_KEY = 'gt-settings-v1';
+
+// 저장할 input ID 목록
+const SAVE_IDS = [
+  'ni-pip-val',
+  'liq-cash','liq-price','liq-gap','liq-lot1','liq-lot2','liq-scale',
+  'rev-cur','rev-tgt','rev-cash','rev-gap','rev-lot1','rev-lot2','rev-scale',
+  'pos-start','pos-cur','pos-gap','pos-lot','pos-profit',
+];
+
+function saveSettings() {
+  const data = { asset: CUR };
+  SAVE_IDS.forEach(id => {
+    const el = $(id);
+    if (el) data[id] = el.value;
+  });
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+
+    // 종목 먼저 복원
+    const asset = data.asset || 'NAS100';
+    selectAsset(asset);
+
+    // 각 input 값 복원
+    SAVE_IDS.forEach(id => {
+      if (data[id] !== undefined && $(id)) {
+        $(id).value = data[id];
+      }
+    });
+
+    // pip값 수동 복원 (selectAsset이 덮어쓰므로 다시)
+    if (data['ni-pip-val']) {
+      PV = parseFloat(data['ni-pip-val']) || PV;
+      ASSETS[asset].pipVal = PV;
+    }
+
+    // 재계산
+    calcLiq(); calcRev(); calcPos();
+    return true;
+  } catch(e) { return false; }
+}
+
+// 모든 input에 저장 트리거 연결
+function bindAutoSave() {
+  SAVE_IDS.forEach(id => {
+    const el = $(id);
+    if (el) el.addEventListener('input', saveSettings);
+  });
+}
+
 // ─── 초기화 ──────────────────────────────────────────────────
-selectAsset('NAS100');
 generateIcon();
+const restored = loadSettings();
+if (!restored) selectAsset('NAS100');
+bindAutoSave();
 
 if('serviceWorker' in navigator){
   const sw=`const C='gt-v3';self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll([]).catch(()=>{}))));self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>new Response('')))));`;
