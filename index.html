@@ -500,6 +500,10 @@ function selectAsset(key) {
   $('pos-profit').value = a.defProfit;
 
   calcLiq(); calcRev(); calcPos();
+  // 해당 종목 저장값 불러오기 (있으면 덮어씀)
+  loadSettings(key);
+  // 마지막 선택 종목 기억
+  try { localStorage.setItem('gt-last-asset', key); } catch(e) {}
 }
 
 function updatePipVal() {
@@ -840,7 +844,6 @@ function generateIcon() {
 }
 
 // ─── localStorage 저장/복원 ───────────────────────────────────
-const SAVE_KEY = 'gt-v1';
 const SAVE_IDS = [
   'ni-pip-val',
   'liq-cash','liq-price','liq-gap','liq-lot1','liq-lot2','liq-scale',
@@ -848,20 +851,21 @@ const SAVE_IDS = [
   'pos-start','pos-cur','pos-gap','pos-lot','pos-profit',
 ];
 
+function saveKey() { return 'gt-v1-' + CUR; }
+
 function saveSettings() {
-  const data = { asset: CUR };
+  const data = {};
   SAVE_IDS.forEach(id => { const el=$(id); if(el) data[id]=el.value; });
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch(e){}
+  try { localStorage.setItem(saveKey(), JSON.stringify(data)); } catch(e){}
 }
 
-function loadSettings() {
+function loadSettings(asset) {
   try {
-    const raw = localStorage.getItem(SAVE_KEY);
+    const raw = localStorage.getItem('gt-v1-' + asset);
     if (!raw) return false;
     const data = JSON.parse(raw);
-    selectAsset(data.asset || 'NAS100');
     SAVE_IDS.forEach(id => { if(data[id]!==undefined && $(id)) $(id).value=data[id]; });
-    if (data['ni-pip-val']) { PV=parseFloat(data['ni-pip-val'])||PV; ASSETS[CUR].pipVal=PV; }
+    if (data['ni-pip-val']) { PV=parseFloat(data['ni-pip-val'])||PV; ASSETS[asset].pipVal=PV; }
     calcLiq(); calcRev(); calcPos();
     return true;
   } catch(e) { return false; }
@@ -869,7 +873,7 @@ function loadSettings() {
 
 function saveToClipboard() {
   saveSettings();
-  showToast('✅ 저장 완료! 다음에 열어도 유지돼요');
+  showToast('✅ 저장 완료!');
 }
 
 function showToast(msg) {
@@ -885,15 +889,15 @@ function showToast(msg) {
   t._timer=setTimeout(()=>{ t.style.opacity='0'; },2500);
 }
 
-// 입력할 때마다 자동저장
 function bindAutoSave() {
   SAVE_IDS.forEach(id => { const el=$(id); if(el) el.addEventListener('input', saveSettings); });
 }
 
 // ─── 초기화 ──────────────────────────────────────────────────
 generateIcon();
-const restored = loadSettings();
-if (!restored) selectAsset('NAS100');
+// 마지막 선택 종목 복원
+const lastAsset = (() => { try { return localStorage.getItem('gt-last-asset') || 'NAS100'; } catch(e) { return 'NAS100'; } })();
+selectAsset(lastAsset);
 bindAutoSave();
 
 if('serviceWorker' in navigator){
